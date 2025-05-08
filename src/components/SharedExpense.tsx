@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { Download, Share2, Copy, FileText, Settings2 } from 'lucide-react';
 
 interface SharedExpenseProps {
   expenses: Expense[];
@@ -40,11 +41,19 @@ const SharedExpense: React.FC<SharedExpenseProps> = ({ expenses }) => {
       case 'whatsapp':
         const encodedMessage = encodeURIComponent(message);
         window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        toast({
+          title: "WhatsApp Share",
+          description: "Opening WhatsApp to share your expense summary",
+        });
         break;
       case 'email':
         const subject = encodeURIComponent('My Expense Summary');
         const body = encodeURIComponent(message);
         window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+        toast({
+          title: "Email Share",
+          description: "Opening your email client to share expenses",
+        });
         break;
       case 'copy':
         navigator.clipboard.writeText(message);
@@ -117,49 +126,74 @@ const SharedExpense: React.FC<SharedExpenseProps> = ({ expenses }) => {
   };
   
   return (
-    <Card>
+    <Card className="transform transition-all duration-300 hover:shadow-lg">
       <CardHeader>
-        <CardTitle className="text-lg font-medium">Share & Download</CardTitle>
+        <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <Share2 className="h-5 w-5 text-food-orange" />
+          Share & Download
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Button 
             variant="outline"
-            className="flex flex-col items-center p-4 h-auto space-y-2"
+            className="flex flex-col items-center p-4 h-auto space-y-2 transition-transform duration-300 hover:scale-105 hover:border-food-green"
             onClick={() => handleShare('whatsapp')}
           >
+            <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white mb-1">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" strokeWidth="2">
+                <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/>
+                <path d="M9 10a1 1 0 0 0 1 1m8-1a5 5 0 0 1-5 5"/>
+              </svg>
+            </div>
             <span>WhatsApp</span>
           </Button>
+          
           <Button 
             variant="outline"
-            className="flex flex-col items-center p-4 h-auto space-y-2"
+            className="flex flex-col items-center p-4 h-auto space-y-2 transition-transform duration-300 hover:scale-105 hover:border-food-blue"
             onClick={() => handleShare('email')}
           >
+            <div className="w-10 h-10 rounded-full bg-[#D44638] flex items-center justify-center text-white mb-1">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" strokeWidth="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
             <span>Email</span>
           </Button>
+          
           <Button 
             variant="outline"
-            className="flex flex-col items-center p-4 h-auto space-y-2"
+            className="flex flex-col items-center p-4 h-auto space-y-2 transition-transform duration-300 hover:scale-105 hover:border-food-orange"
             onClick={() => handleShare('copy')}
           >
-            <span>Copy Link</span>
+            <div className="w-10 h-10 rounded-full bg-[#6C63FF] flex items-center justify-center text-white mb-1">
+              <Copy className="h-5 w-5" />
+            </div>
+            <span>Copy Text</span>
           </Button>
+          
           <Button 
             variant="outline"
-            className="flex flex-col items-center p-4 h-auto space-y-2 text-food-blue"
+            className="flex flex-col items-center p-4 h-auto space-y-2 transition-transform duration-300 hover:scale-105 hover:border-food-yellow"
             onClick={generatePDF}
           >
+            <div className="w-10 h-10 rounded-full bg-[#FF5722] flex items-center justify-center text-white mb-1">
+              <FileText className="h-5 w-5" />
+            </div>
             <span>PDF</span>
           </Button>
         </div>
         
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="w-full mt-2">
+            <Button variant="ghost" size="sm" className="w-full mt-2 flex items-center justify-center gap-2">
+              <Settings2 className="h-4 w-4" />
               Advanced Options
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md animate-scale-in">
             <DialogHeader>
               <DialogTitle>Export Options</DialogTitle>
             </DialogHeader>
@@ -189,8 +223,9 @@ const SharedExpense: React.FC<SharedExpenseProps> = ({ expenses }) => {
                   <Button 
                     variant="outline"
                     onClick={generatePDF}
-                    className="w-full"
+                    className="w-full flex items-center gap-2"
                   >
+                    <FileText className="h-4 w-4" />
                     PDF
                   </Button>
                   <Button 
@@ -202,8 +237,9 @@ const SharedExpense: React.FC<SharedExpenseProps> = ({ expenses }) => {
                         description: "This feature will be available in future updates",
                       });
                     }}
-                    className="w-full"
+                    className="w-full flex items-center gap-2"
                   >
+                    <Download className="h-4 w-4" />
                     CSV
                   </Button>
                 </div>
