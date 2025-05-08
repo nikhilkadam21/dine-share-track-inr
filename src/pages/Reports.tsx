@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePdfExport } from '@/hooks/usePdfExport';
@@ -17,10 +16,11 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { format, subDays, subMonths, subYears } from 'date-fns';
-import { Loader2, FileDown, Check } from 'lucide-react';
+import { Loader2, FileDown, Check, FileText } from 'lucide-react';
 
 const Reports: React.FC = () => {
   const [expenses] = useLocalStorage<Expense[]>('expenses', []);
+  const [userProfile] = useLocalStorage('userProfile', { name: 'User', email: '', phone: '' });
   const { exportToPdf, isExporting } = usePdfExport();
   
   // Filter states
@@ -42,7 +42,7 @@ const Reports: React.FC = () => {
 
   const [timePeriod, setTimePeriod] = useState('month');
 
-  // Category options with "All categories" option
+  // Category options
   const categories: { value: ExpenseCategory; label: string }[] = [
     { value: 'lunch', label: 'Lunch' },
     { value: 'dinner', label: 'Dinner' },
@@ -99,7 +99,7 @@ const Reports: React.FC = () => {
     }
   };
 
-  // Handle PDF export
+  // Handle PDF export with username
   const handleExport = () => {
     const dateRange: DateRange = {
       startDate,
@@ -109,6 +109,7 @@ const Reports: React.FC = () => {
     exportToPdf('Expense Report', {
       dateRange,
       categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+      userName: userProfile.name || 'User',
     });
   };
 
@@ -117,16 +118,19 @@ const Reports: React.FC = () => {
       <h1 className="text-2xl font-bold tracking-tight mb-6">Reports & Export</h1>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="md:col-span-2 lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Generate Reports</CardTitle>
+        <Card className="md:col-span-2 lg:col-span-2 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+          <CardHeader className="bg-gradient-to-r from-food-orange/10 to-food-yellow/10 rounded-t-lg">
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-food-orange" />
+              Generate Reports
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+          <CardContent className="space-y-6 pt-6">
+            <div className="space-y-6 animate-fade-in">
               <div className="space-y-2">
                 <Label htmlFor="time-period">Time Period</Label>
                 <Select value={timePeriod} onValueChange={handleTimePeriodChange}>
-                  <SelectTrigger id="time-period">
+                  <SelectTrigger id="time-period" className="transition-all duration-200 hover:border-food-orange">
                     <SelectValue placeholder="Select time period" />
                   </SelectTrigger>
                   <SelectContent>
@@ -140,7 +144,7 @@ const Reports: React.FC = () => {
               </div>
 
               {timePeriod === 'custom' && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 animate-fade-in">
                   <div className="space-y-2">
                     <Label htmlFor="start-date">Start Date</Label>
                     <Input
@@ -148,6 +152,7 @@ const Reports: React.FC = () => {
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
+                      className="transition-all duration-200 hover:border-food-orange"
                     />
                   </div>
                   <div className="space-y-2">
@@ -157,6 +162,7 @@ const Reports: React.FC = () => {
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
+                      className="transition-all duration-200 hover:border-food-orange"
                     />
                   </div>
                 </div>
@@ -176,6 +182,7 @@ const Reports: React.FC = () => {
                         onCheckedChange={(checked) =>
                           handleCategoryChange(category.value, checked === true)
                         }
+                        className="data-[state=checked]:bg-food-orange data-[state=checked]:border-food-orange"
                       />
                       <Label
                         htmlFor={`category-${category.value}`}
@@ -193,7 +200,7 @@ const Reports: React.FC = () => {
 
               <Button
                 onClick={handleExport}
-                className="w-full"
+                className="w-full bg-gradient-to-r from-food-orange to-food-yellow hover:opacity-90 transition-all duration-300 transform hover:-translate-y-1 shadow-md"
                 disabled={isExporting}
               >
                 {isExporting ? (
@@ -212,12 +219,12 @@ const Reports: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1 card-3d">
+          <CardHeader className="bg-gradient-to-r from-food-green/10 to-food-blue/10 rounded-t-lg">
             <CardTitle>Export Options</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-4 animate-fade-in">
               <p className="text-sm text-muted-foreground">
                 Export your expense data in different formats for your records or
                 further analysis.
@@ -226,25 +233,27 @@ const Reports: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between py-2 border-b">
                   <span className="font-medium">PDF Report</span>
-                  <Check className="h-4 w-4 text-green-500" />
+                  <div className="bg-green-100 rounded-full p-1">
+                    <Check className="h-4 w-4 text-green-500" />
+                  </div>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b">
                   <span className="font-medium">CSV Export</span>
-                  <span className="text-xs text-muted-foreground">Coming Soon</span>
+                  <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-muted-foreground">Coming Soon</span>
                 </div>
                 <div className="flex items-center justify-between py-2 border-b">
                   <span className="font-medium">Excel Export</span>
-                  <span className="text-xs text-muted-foreground">Coming Soon</span>
+                  <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-muted-foreground">Coming Soon</span>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="font-medium">Google Sheets</span>
-                  <span className="text-xs text-muted-foreground">Coming Soon</span>
+                  <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-muted-foreground">Coming Soon</span>
                 </div>
               </div>
               
               <div className="mt-6">
                 <p className="text-xs text-muted-foreground">
-                  Note: PDF Reports include transaction details and summary charts for the selected time period.
+                  Note: PDF Reports include transaction details, summary charts, and daily spending analysis for the selected time period.
                 </p>
               </div>
             </div>
