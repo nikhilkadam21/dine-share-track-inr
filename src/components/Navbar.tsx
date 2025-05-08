@@ -1,52 +1,120 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { UserProfile } from '@/data/types';
-
-const defaultProfile: UserProfile = {
-  name: 'User',
-  email: '',
-  phone: '',
-};
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { 
+  Menu, 
+  User, 
+  BarChart, 
+  Users, 
+  Home, 
+  Settings as SettingsIcon
+} from 'lucide-react';
 
 const Navbar: React.FC = () => {
-  const [profile] = useLocalStorage<UserProfile>('user-profile', defaultProfile);
+  const location = useLocation();
+  
+  const isActive = (path: string) => location.pathname === path;
   
   return (
-    <header className="bg-white shadow-sm">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-food-orange to-food-yellow flex items-center justify-center">
-              <span className="text-white font-bold text-xl">₹</span>
-            </div>
-            <span className="text-xl font-bold text-gray-800">DineShareTrack</span>
-          </Link>
-        </div>
+    <header className="border-b shadow-sm bg-white">
+      <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+        <Link to="/" className="flex items-center">
+          <span className="font-bold text-xl text-food-green">DineShareTrack</span>
+        </Link>
         
-        <nav className="hidden md:flex items-center space-x-6">
-          <Link to="/" className="text-gray-700 hover:text-food-orange transition-colors">
-            Dashboard
+        <div className="hidden sm:flex sm:items-center sm:space-x-1">
+          <Link to="/dashboard">
+            <Button 
+              variant={isActive('/dashboard') ? 'default' : 'ghost'}
+              className="text-sm font-medium flex items-center gap-1"
+            >
+              <Home className="h-4 w-4" />
+              <span>Home</span>
+            </Button>
           </Link>
-          <Link to="/reports" className="text-gray-700 hover:text-food-orange transition-colors">
-            Reports
+          <Link to="/groups">
+            <Button 
+              variant={isActive('/groups') ? 'default' : 'ghost'}
+              className="text-sm font-medium flex items-center gap-1"
+            >
+              <Users className="h-4 w-4" />
+              <span>Groups</span>
+            </Button>
           </Link>
-        </nav>
-        
-        <div className="flex items-center space-x-4">
+          <Link to="/reports">
+            <Button 
+              variant={isActive('/reports') ? 'default' : 'ghost'}
+              className="text-sm font-medium flex items-center gap-1"
+            >
+              <BarChart className="h-4 w-4" />
+              <span>Reports</span>
+            </Button>
+          </Link>
           <Link to="/profile">
-            <Avatar className="h-9 w-9 hover:ring-2 hover:ring-food-orange transition-all">
-              <AvatarImage src={profile.avatar} alt={profile.name} />
-              <AvatarFallback className="bg-food-green text-white">
-                {profile.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <Button 
+              variant={isActive('/profile') ? 'default' : 'ghost'}
+              className="text-sm font-medium flex items-center gap-1"
+            >
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </Button>
+          </Link>
+          <Link to="/settings">
+            <Button 
+              variant={isActive('/settings') ? 'default' : 'ghost'}
+              className="text-sm font-medium flex items-center gap-1"
+            >
+              <SettingsIcon className="h-4 w-4" />
+              <span>Settings</span>
+            </Button>
           </Link>
         </div>
-      </div>
+        
+        <div className="sm:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <Link to="/dashboard">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Home className="mr-2 h-4 w-4" />
+                  <span>Home</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link to="/groups">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Groups</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link to="/reports">
+                <DropdownMenuItem className="cursor-pointer">
+                  <BarChart className="mr-2 h-4 w-4" />
+                  <span>Reports</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link to="/profile">
+                <DropdownMenuItem className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link to="/settings">
+                <DropdownMenuItem className="cursor-pointer">
+                  <SettingsIcon className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </nav>
     </header>
   );
 };

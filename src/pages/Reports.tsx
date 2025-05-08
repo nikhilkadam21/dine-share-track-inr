@@ -1,318 +1,253 @@
 
-import React, { useState, useMemo } from 'react';
-import Layout from '@/components/Layout';
+import React, { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Expense, DateRange } from '@/data/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePdfExport } from '@/hooks/usePdfExport';
+import Layout from '@/components/Layout';
+import { Expense, ExpenseCategory, DateRange } from '@/data/types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line
-} from 'recharts';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { format, subDays, subMonths, subYears } from 'date-fns';
+import { Loader2, FileDown, Check } from 'lucide-react';
 
 const Reports: React.FC = () => {
   const [expenses] = useLocalStorage<Expense[]>('expenses', []);
-  const [dateRange, setDateRange] = useState<DateRange>({
-    startDate: new Date(new Date().setDate(1)).toISOString().split('T')[0], // First day of current month
-    endDate: new Date().toISOString().split('T')[0], // Today
-  });
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+  const { exportToPdf, isExporting } = usePdfExport();
   
-  const filteredExpenses = useMemo(() => {
-    return expenses.filter(expense => {
-      const expenseDate = expense.date.split('T')[0];
-      return expenseDate >= dateRange.startDate && expenseDate <= dateRange.endDate;
-    });
-  }, [expenses, dateRange]);
-  
-  const totalAmount = useMemo(() => {
-    return filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  }, [filteredExpenses]);
-  
-  const averageDaily = useMemo(() => {
-    if (filteredExpenses.length === 0) return 0;
-    
-    const start = new Date(dateRange.startDate);
-    const end = new Date(dateRange.endDate);
-    const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    
-    return totalAmount / daysDiff;
-  }, [filteredExpenses, dateRange, totalAmount]);
-  
-  const categoryData = useMemo(() => {
-    const categories: Record<string, number> = {};
-    
-    filteredExpenses.forEach(expense => {
-      if (!categories[expense.category]) {
-        categories[expense.category] = 0;
-      }
-      categories[expense.category] += expense.amount;
-    });
-    
-    return Object.entries(categories).map(([name, value]) => ({
-      name,
-      amount: value,
-    }));
-  }, [filteredExpenses]);
-  
-  const trendsData = useMemo(() => {
-    const data: Record<string, number> = {};
-    
-    filteredExpenses.forEach(expense => {
-      const date = expense.date.split('T')[0];
-      if (!data[date]) {
-        data[date] = 0;
-      }
-      data[date] += expense.amount;
-    });
-    
-    return Object.entries(data)
-      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-      .map(([date, amount]) => ({
-        date: new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
-        amount,
-      }));
-  }, [filteredExpenses]);
-  
-  const generateReport = () => {
-    const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(20);
-    doc.text('Expense Report', 14, 22);
-    
-    // Add date range
-    doc.setFontSize(12);
-    doc.text(`Period: ${new Date(dateRange.startDate).toLocaleDateString('en-IN')} to ${new Date(dateRange.endDate).toLocaleDateString('en-IN')}`, 14, 32);
-    
-    // Add summary
-    doc.text(`Total Amount: ₹${totalAmount.toLocaleString('en-IN')}`, 14, 42);
-    doc.text(`Average Daily Expense: ₹${averageDaily.toFixed(2)}`, 14, 52);
-    
-    // Create table
-    const tableColumn = ["Date", "Category", "Amount (₹)", "Description"];
-    const tableRows: any[] = [];
-    
-    filteredExpenses.forEach(expense => {
-      const date = new Date(expense.date).toLocaleDateString('en-IN');
-      const tableRow = [
-        date,
-        expense.category,
-        expense.amount.toLocaleString('en-IN'),
-        expense.description || '-',
-      ];
-      tableRows.push(tableRow);
-    });
-    
-    // @ts-ignore - jsPDF-AutoTable extension
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 65,
-      theme: 'striped',
-      headStyles: { fillColor: [255, 126, 69] },
-    });
-    
-    // Save the PDF
-    doc.save('expense-report.pdf');
+  // Filter states
+  const [startDate, setStartDate] = useState<string>(
+    format(subMonths(new Date(), 1), 'yyyy-MM-dd')
+  );
+  const [endDate, setEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedCategories, setSelectedCategories] = useState<ExpenseCategory[]>([]);
+
+  // Predefined time periods
+  const timeOptions = [
+    { label: 'Last 7 days', value: 'week' },
+    { label: 'Last 30 days', value: 'month' },
+    { label: 'Last 3 months', value: 'quarter' },
+    { label: 'Last year', value: 'year' },
+    { label: 'All time', value: 'all' },
+    { label: 'Custom range', value: 'custom' },
+  ];
+
+  const [timePeriod, setTimePeriod] = useState('month');
+
+  // Category options with "All categories" option
+  const categories: { value: ExpenseCategory; label: string }[] = [
+    { value: 'lunch', label: 'Lunch' },
+    { value: 'dinner', label: 'Dinner' },
+    { value: 'breakfast', label: 'Breakfast' },
+    { value: 'snacks', label: 'Snacks' },
+    { value: 'beverages', label: 'Beverages' },
+    { value: 'groceries', label: 'Groceries' },
+    { value: 'other', label: 'Other' },
+  ];
+
+  // Handle time period change
+  const handleTimePeriodChange = (value: string) => {
+    setTimePeriod(value);
+
+    const today = new Date();
+    let newStartDate;
+
+    switch (value) {
+      case 'week':
+        newStartDate = subDays(today, 7);
+        break;
+      case 'month':
+        newStartDate = subDays(today, 30);
+        break;
+      case 'quarter':
+        newStartDate = subMonths(today, 3);
+        break;
+      case 'year':
+        newStartDate = subYears(today, 1);
+        break;
+      case 'all':
+        // Find the earliest expense date or default to one year ago
+        if (expenses.length > 0) {
+          const dates = expenses.map(exp => new Date(exp.date).getTime());
+          newStartDate = new Date(Math.min(...dates));
+        } else {
+          newStartDate = subYears(today, 1);
+        }
+        break;
+      default: // 'custom' or fallback
+        return; // Don't change the dates for custom
+    }
+
+    setStartDate(format(newStartDate, 'yyyy-MM-dd'));
+    setEndDate(format(today, 'yyyy-MM-dd'));
   };
-  
+
+  // Toggle category selection
+  const handleCategoryChange = (category: ExpenseCategory, checked: boolean) => {
+    if (checked) {
+      setSelectedCategories([...selectedCategories, category]);
+    } else {
+      setSelectedCategories(selectedCategories.filter((c) => c !== category));
+    }
+  };
+
+  // Handle PDF export
+  const handleExport = () => {
+    const dateRange: DateRange = {
+      startDate,
+      endDate,
+    };
+
+    exportToPdf('Expense Report', {
+      dateRange,
+      categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+    });
+  };
+
   return (
     <Layout>
-      <h1 className="text-2xl font-bold tracking-tight mb-6">Reports & Analytics</h1>
-      
-      <div className="space-y-6">
-        <Card>
+      <h1 className="text-2xl font-bold tracking-tight mb-6">Reports & Export</h1>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="md:col-span-2 lg:col-span-2">
           <CardHeader>
-            <CardTitle>Report Settings</CardTitle>
-            <CardDescription>Customize the report period and grouping</CardDescription>
+            <CardTitle>Generate Reports</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="start-date">Start Date</Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={dateRange.startDate}
-                  onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end-date">End Date</Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={dateRange.endDate}
-                  onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="group-by">Group By</Label>
-                <Select value={groupBy} onValueChange={(value: 'day' | 'week' | 'month') => setGroupBy(value)}>
-                  <SelectTrigger id="group-by">
-                    <SelectValue placeholder="Select grouping" />
+                <Label htmlFor="time-period">Time Period</Label>
+                <Select value={timePeriod} onValueChange={handleTimePeriodChange}>
+                  <SelectTrigger id="time-period">
+                    <SelectValue placeholder="Select time period" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="day">Day</SelectItem>
-                    <SelectItem value="week">Week</SelectItem>
-                    <SelectItem value="month">Month</SelectItem>
+                    {timeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {timePeriod === 'custom' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start-date">Start Date</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end-date">End Date</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Categories</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                  {categories.map((category) => (
+                    <div
+                      key={category.value}
+                      className="flex items-center space-x-2"
+                    >
+                      <Checkbox
+                        id={`category-${category.value}`}
+                        checked={selectedCategories.includes(category.value)}
+                        onCheckedChange={(checked) =>
+                          handleCategoryChange(category.value, checked === true)
+                        }
+                      />
+                      <Label
+                        htmlFor={`category-${category.value}`}
+                        className="text-sm font-normal"
+                      >
+                        {category.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave all unchecked to include all categories
+                </p>
+              </div>
+
+              <Button
+                onClick={handleExport}
+                className="w-full"
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Export to PDF
+                  </>
+                )}
+              </Button>
             </div>
-            <Button 
-              onClick={generateReport} 
-              className="mt-4 bg-food-blue hover:bg-food-blue/90"
-            >
-              Generate PDF Report
-            </Button>
           </CardContent>
         </Card>
-        
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div>
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Total Spend</div>
-                    <div className="text-2xl font-bold">₹{totalAmount.toLocaleString('en-IN')}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Average Daily</div>
-                    <div className="text-2xl font-bold">₹{averageDaily.toFixed(2)}</div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground">Number of Expenses</div>
-                    <div className="text-2xl font-bold">{filteredExpenses.length}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="categories">
-              <TabsList className="grid grid-cols-2">
-                <TabsTrigger value="categories">By Category</TabsTrigger>
-                <TabsTrigger value="trend">Spending Trend</TabsTrigger>
-              </TabsList>
-              <TabsContent value="categories" className="pt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    {categoryData.length > 0 ? (
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={categoryData}
-                            layout="vertical"
-                            margin={{
-                              top: 5,
-                              right: 30,
-                              left: 60,
-                              bottom: 5,
-                            }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis type="category" dataKey="name" />
-                            <Tooltip formatter={(value) => `₹${value}`} />
-                            <Bar dataKey="amount" fill="#FF7E45" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="h-80 flex items-center justify-center">
-                        <p className="text-muted-foreground">No expense data in this period</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              <TabsContent value="trend" className="pt-4">
-                <Card>
-                  <CardContent className="pt-6">
-                    {trendsData.length > 0 ? (
-                      <div className="h-80">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={trendsData}
-                            margin={{
-                              top: 5,
-                              right: 30,
-                              left: 20,
-                              bottom: 5,
-                            }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip formatter={(value) => `₹${value}`} />
-                            <Line type="monotone" dataKey="amount" stroke="#4CAF50" activeDot={{ r: 8 }} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="h-80 flex items-center justify-center">
-                        <p className="text-muted-foreground">No expense data in this period</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
-        
+
         <Card>
           <CardHeader>
-            <CardTitle>Detailed Expenses</CardTitle>
-            <CardDescription>All expenses within the selected period</CardDescription>
+            <CardTitle>Export Options</CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredExpenses.length > 0 ? (
-              <div className="border rounded-md">
-                <div className="grid grid-cols-4 font-medium p-3 border-b">
-                  <div>Date</div>
-                  <div>Category</div>
-                  <div>Description</div>
-                  <div className="text-right">Amount</div>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Export your expense data in different formats for your records or
+                further analysis.
+              </p>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="font-medium">PDF Report</span>
+                  <Check className="h-4 w-4 text-green-500" />
                 </div>
-                <div className="divide-y">
-                  {filteredExpenses
-                    .slice()
-                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                    .map((expense) => (
-                      <div key={expense.id} className="grid grid-cols-4 p-3">
-                        <div>{new Date(expense.date).toLocaleDateString('en-IN')}</div>
-                        <div className="capitalize">{expense.category}</div>
-                        <div>{expense.description || '—'}</div>
-                        <div className="text-right">₹{expense.amount.toLocaleString('en-IN')}</div>
-                      </div>
-                    ))}
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="font-medium">CSV Export</span>
+                  <span className="text-xs text-muted-foreground">Coming Soon</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="font-medium">Excel Export</span>
+                  <span className="text-xs text-muted-foreground">Coming Soon</span>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="font-medium">Google Sheets</span>
+                  <span className="text-xs text-muted-foreground">Coming Soon</span>
                 </div>
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No expenses found in the selected date range</p>
+              
+              <div className="mt-6">
+                <p className="text-xs text-muted-foreground">
+                  Note: PDF Reports include transaction details and summary charts for the selected time period.
+                </p>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
