@@ -94,10 +94,87 @@
   }
 }
 
+/* Modern Card Styles */
 .expense-card {
-  @apply bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow;
+  @apply bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow transform hover:-translate-y-1 transition-transform duration-300;
 }
 
 .food-icon-bg {
   @apply bg-gradient-to-br from-food-orange to-food-yellow text-white rounded-full p-2 flex items-center justify-center;
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.slide-in {
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
+.glass-card {
+  @apply bg-white/90 backdrop-blur-sm border border-white/50 rounded-xl shadow-lg;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Animation Utility Classes */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s infinite;
+}
+
+/* 3D Card effect */
+.card-3d {
+  @apply transition-all duration-300 relative;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.card-3d:hover {
+  transform: rotateY(10deg);
+  box-shadow: -15px 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-primary {
+  @apply bg-gradient-to-r from-food-orange to-food-yellow;
+}
+
+.bg-gradient-secondary {
+  @apply bg-gradient-to-r from-food-green to-food-blue;
 }

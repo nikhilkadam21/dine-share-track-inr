@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -9,26 +9,65 @@ import {
   BarChart, 
   Users, 
   Home, 
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { UserProfile } from '@/data/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const [scrolled, setScrolled] = useState(false);
+  const [darkMode, setDarkMode] = useLocalStorage('darkMode', false);
+  const [profile] = useLocalStorage<UserProfile | null>('user-profile', null);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
   
   const isActive = (path: string) => location.pathname === path;
   
+  const getInitial = (name: string) => {
+    return name?.charAt(0) || 'U';
+  };
+  
   return (
-    <header className="border-b shadow-sm bg-white">
+    <header 
+      className={`sticky top-0 z-50 bg-white dark:bg-gray-900 transition-all duration-200 ${
+        scrolled ? 'shadow-md' : 'shadow-sm'
+      }`}
+    >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-        <Link to="/" className="flex items-center">
-          <span className="font-bold text-xl text-food-green">DineShareTrack</span>
+        <Link to="/" className="flex items-center group">
+          <div className="w-8 h-8 bg-gradient-to-br from-food-orange to-food-yellow rounded-full flex items-center justify-center mr-2 shadow-md group-hover:shadow-lg transition-all">
+            <span className="text-white font-bold">D</span>
+          </div>
+          <span className="font-bold text-xl bg-gradient-to-r from-food-orange to-food-green bg-clip-text text-transparent">
+            DineShareTrack
+          </span>
         </Link>
         
         <div className="hidden sm:flex sm:items-center sm:space-x-1">
           <Link to="/dashboard">
             <Button 
               variant={isActive('/dashboard') ? 'default' : 'ghost'}
-              className="text-sm font-medium flex items-center gap-1"
+              className={`text-sm font-medium flex items-center gap-1 transition-all ${
+                isActive('/dashboard') ? 'bg-food-orange/90 text-white' : ''
+              }`}
             >
               <Home className="h-4 w-4" />
               <span>Home</span>
@@ -37,7 +76,9 @@ const Navbar: React.FC = () => {
           <Link to="/groups">
             <Button 
               variant={isActive('/groups') ? 'default' : 'ghost'}
-              className="text-sm font-medium flex items-center gap-1"
+              className={`text-sm font-medium flex items-center gap-1 transition-all ${
+                isActive('/groups') ? 'bg-food-orange/90 text-white' : ''
+              }`}
             >
               <Users className="h-4 w-4" />
               <span>Groups</span>
@@ -46,7 +87,9 @@ const Navbar: React.FC = () => {
           <Link to="/reports">
             <Button 
               variant={isActive('/reports') ? 'default' : 'ghost'}
-              className="text-sm font-medium flex items-center gap-1"
+              className={`text-sm font-medium flex items-center gap-1 transition-all ${
+                isActive('/reports') ? 'bg-food-orange/90 text-white' : ''
+              }`}
             >
               <BarChart className="h-4 w-4" />
               <span>Reports</span>
@@ -55,7 +98,9 @@ const Navbar: React.FC = () => {
           <Link to="/profile">
             <Button 
               variant={isActive('/profile') ? 'default' : 'ghost'}
-              className="text-sm font-medium flex items-center gap-1"
+              className={`text-sm font-medium flex items-center gap-1 transition-all ${
+                isActive('/profile') ? 'bg-food-orange/90 text-white' : ''
+              }`}
             >
               <User className="h-4 w-4" />
               <span>Profile</span>
@@ -64,7 +109,9 @@ const Navbar: React.FC = () => {
           <Link to="/settings">
             <Button 
               variant={isActive('/settings') ? 'default' : 'ghost'}
-              className="text-sm font-medium flex items-center gap-1"
+              className={`text-sm font-medium flex items-center gap-1 transition-all ${
+                isActive('/settings') ? 'bg-food-orange/90 text-white' : ''
+              }`}
             >
               <SettingsIcon className="h-4 w-4" />
               <span>Settings</span>
@@ -72,47 +119,70 @@ const Navbar: React.FC = () => {
           </Link>
         </div>
         
-        <div className="sm:hidden">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <Link to="/dashboard">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Home className="mr-2 h-4 w-4" />
-                  <span>Home</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link to="/groups">
-                <DropdownMenuItem className="cursor-pointer">
-                  <Users className="mr-2 h-4 w-4" />
-                  <span>Groups</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link to="/reports">
-                <DropdownMenuItem className="cursor-pointer">
-                  <BarChart className="mr-2 h-4 w-4" />
-                  <span>Reports</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link to="/profile">
-                <DropdownMenuItem className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link to="/settings">
-                <DropdownMenuItem className="cursor-pointer">
-                  <SettingsIcon className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Toggle theme"
+            className="rounded-full"
+            onClick={() => setDarkMode(!darkMode)}
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          
+          <div className="hidden sm:block">
+            <Link to="/profile">
+              <Avatar className="cursor-pointer transition-all hover:ring-2 hover:ring-food-orange">
+                <AvatarImage src={profile?.avatar} />
+                <AvatarFallback className="bg-food-green text-white">
+                  {getInitial(profile?.name || 'User')}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          </div>
+          
+          <div className="sm:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 animate-scale-in">
+                <Link to="/dashboard">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Home className="mr-2 h-4 w-4" />
+                    <span>Home</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link to="/groups">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>Groups</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link to="/reports">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <BarChart className="mr-2 h-4 w-4" />
+                    <span>Reports</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link to="/profile">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link to="/settings">
+                  <DropdownMenuItem className="cursor-pointer">
+                    <SettingsIcon className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </nav>
     </header>
