@@ -1,10 +1,9 @@
-
 import React, { useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Group, DebtSimplification } from '@/data/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Indian_rupee } from 'lucide-react';
+import { BadgeIndianRupee } from 'lucide-react';
 
 const DebtOverview: React.FC<{ groupId?: string }> = ({ groupId }) => {
   const [groups] = useLocalStorage<Group[]>('groups', []);
@@ -124,7 +123,7 @@ const DebtOverview: React.FC<{ groupId?: string }> = ({ groupId }) => {
                   <div className="flex flex-col items-center">
                     <div className="text-xs text-muted-foreground">owes</div>
                     <div className="flex items-center text-sm font-medium">
-                      <Indian_rupee className="h-3 w-3 mr-1" /> 
+                      <BadgeIndianRupee className="h-3 w-3 mr-1" /> 
                       {debt.amount.toLocaleString('en-IN', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
