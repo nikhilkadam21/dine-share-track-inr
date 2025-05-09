@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import Layout from '@/components/Layout';
 import ExpenseForm from '@/components/ExpenseForm';
@@ -9,9 +9,18 @@ import { Expense } from '@/data/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Edit, Trash2 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const [expenses] = useLocalStorage<Expense[]>('expenses', []);
+  const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
+  const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
+  
+  const handleEditExpense = (expense: Expense) => {
+    setExpenseToEdit(expense);
+    // Scroll to the form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   
   return (
     <Layout>
@@ -35,10 +44,10 @@ const Dashboard: React.FC = () => {
                         return (
                           <div
                             key={expense.id}
-                            className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
+                            className="flex items-center justify-between p-3 bg-muted/50 rounded-md hover:bg-muted transition-colors"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 food-icon-bg">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-food-green to-food-blue text-white flex items-center justify-center font-medium transform transition-transform duration-300 hover:scale-110">
                                 {expense.category.charAt(0).toUpperCase()}
                               </div>
                               <div>
@@ -50,12 +59,25 @@ const Dashboard: React.FC = () => {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="font-bold">
-                                ₹{expense.amount.toLocaleString('en-IN')}
+                            <div className="flex items-center gap-4">
+                              <div className="text-right mr-2">
+                                <div className="font-bold">
+                                  ₹{expense.amount.toLocaleString('en-IN')}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {date.toLocaleDateString('en-IN')}
+                                </div>
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                {date.toLocaleDateString('en-IN')}
+                              <div className="flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-8 w-8 p-0 rounded-full"
+                                  onClick={() => handleEditExpense(expense)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                  <span className="sr-only">Edit</span>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -77,7 +99,7 @@ const Dashboard: React.FC = () => {
         </div>
         
         <div className="space-y-6">
-          <ExpenseForm />
+          <ExpenseForm onExpenseAdded={() => setExpenseToEdit(null)} />
           <SharedExpense expenses={expenses} />
         </div>
       </div>
