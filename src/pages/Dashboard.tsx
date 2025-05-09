@@ -11,15 +11,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
 
 const Dashboard: React.FC = () => {
   const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const { toast } = useToast();
   
   const handleEditExpense = (expense: Expense) => {
     setExpenseToEdit(expense);
     // Scroll to the form
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleDeleteExpense = (expense: Expense) => {
+    const updatedExpenses = expenses.filter((e) => e.id !== expense.id);
+    setExpenses(updatedExpenses);
+    setExpenseToDelete(null);
+    
+    toast({
+      title: "Expense deleted",
+      description: "The expense has been deleted successfully",
+    });
   };
   
   return (
@@ -78,6 +93,64 @@ const Dashboard: React.FC = () => {
                                   <Edit className="h-4 w-4" />
                                   <span className="sr-only">Edit</span>
                                 </Button>
+                                
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
+                                      onClick={() => setExpenseToDelete(expense)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      <span className="sr-only">Delete</span>
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Delete Expense</DialogTitle>
+                                      <DialogDescription>
+                                        Are you sure you want to delete this expense? This action cannot be undone.
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    {expenseToDelete && (
+                                      <div className="py-4">
+                                        <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-food-green to-food-blue text-white flex items-center justify-center font-medium">
+                                              {expenseToDelete.category.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                              <div className="font-medium capitalize">{expenseToDelete.category}</div>
+                                              <div className="text-sm text-muted-foreground">
+                                                {expenseToDelete.description || 'No description'}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="text-right">
+                                            <div className="font-bold">
+                                              ₹{expenseToDelete.amount.toLocaleString('en-IN')}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                              {new Date(expenseToDelete.date).toLocaleDateString('en-IN')}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    <DialogFooter>
+                                      <Button variant="outline" onClick={() => setExpenseToDelete(null)}>
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        variant="destructive" 
+                                        onClick={() => expenseToDelete && handleDeleteExpense(expenseToDelete)}
+                                      >
+                                        Delete
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
                               </div>
                             </div>
                           </div>
@@ -99,7 +172,11 @@ const Dashboard: React.FC = () => {
         </div>
         
         <div className="space-y-6">
-          <ExpenseForm onExpenseAdded={() => setExpenseToEdit(null)} />
+          <ExpenseForm 
+            onExpenseAdded={() => setExpenseToEdit(null)} 
+            expenseToEdit={expenseToEdit}
+            onCancelEdit={() => setExpenseToEdit(null)}
+          />
           <SharedExpense expenses={expenses} />
         </div>
       </div>
