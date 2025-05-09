@@ -77,46 +77,6 @@ export function SignInPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      cleanupAuthState();
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
-      
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Google Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
-  };
-
-  const handleGitHubSignIn = async () => {
-    setIsLoading(true);
-    try {
-      cleanupAuthState();
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-      });
-      
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "GitHub Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="grid w-full grow items-center px-4 sm:justify-center">
       <Card className="w-full sm:w-96">
@@ -125,34 +85,7 @@ export function SignInPage() {
           <CardDescription>Welcome back! Please sign in to continue</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignIn}>
-          <CardContent className="grid gap-y-4">
-            <div className="grid grid-cols-2 gap-x-4">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                type="button"
-                onClick={handleGitHubSignIn}
-                disabled={isLoading}
-              >
-                <Icons.gitHub className="mr-2 size-4" />
-                GitHub
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                <Icons.google className="mr-2 size-4" />
-                Google
-              </Button>
-            </div>
-            
-            <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-              or
-            </p>
-            
+          <CardContent className="grid gap-y-4">            
             <div className="space-y-2">
               <Label>Email address</Label>
               <Input 
@@ -187,7 +120,7 @@ export function SignInPage() {
                 )}
               </Button>
               <Button variant="link" size="sm" asChild>
-                <Link to="/signup">
+                <Link to="/auth/signup">
                   Don&apos;t have an account? Sign up
                 </Link>
               </Button>

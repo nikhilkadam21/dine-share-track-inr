@@ -61,10 +61,15 @@ export function SignUpPage() {
 
       toast({
         title: "Sign up successful",
-        description: "Please check your email to verify your account",
+        description: data.user ? "Account created successfully! You can now sign in." : "Please check your email to verify your account",
       });
       
-      navigate('/signin');
+      // If auto-confirm is enabled, we can redirect to dashboard
+      if (data.user && !data.user.identities?.[0].identity_data?.email_verified) {
+        navigate('/auth/signin');
+      } else {
+        navigate('/auth/signin');
+      }
     } catch (error: any) {
       toast({
         title: "Sign up failed",
@@ -72,46 +77,6 @@ export function SignUpPage() {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      cleanupAuthState();
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-      });
-      
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Google Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    }
-  };
-
-  const handleGitHubSignIn = async () => {
-    setIsLoading(true);
-    try {
-      cleanupAuthState();
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-      });
-      
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "GitHub Sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
       setIsLoading(false);
     }
   };
@@ -124,34 +89,7 @@ export function SignUpPage() {
           <CardDescription>Create your account to get started</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignUp}>
-          <CardContent className="grid gap-y-4">
-            <div className="grid grid-cols-2 gap-x-4">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                type="button"
-                onClick={handleGitHubSignIn}
-                disabled={isLoading}
-              >
-                <Icons.gitHub className="mr-2 size-4" />
-                GitHub
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                <Icons.google className="mr-2 size-4" />
-                Google
-              </Button>
-            </div>
-            
-            <p className="flex items-center gap-x-3 text-sm text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-              or
-            </p>
-            
+          <CardContent className="grid gap-y-4">            
             <div className="space-y-2">
               <Label>Full Name</Label>
               <Input 
@@ -196,7 +134,7 @@ export function SignUpPage() {
                 )}
               </Button>
               <Button variant="link" size="sm" asChild>
-                <Link to="/signin">
+                <Link to="/auth/signin">
                   Already have an account? Sign in
                 </Link>
               </Button>

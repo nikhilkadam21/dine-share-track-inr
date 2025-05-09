@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
@@ -29,9 +28,11 @@ const categories: { value: ExpenseCategory; label: string }[] = [
 
 interface ExpenseFormProps {
   onExpenseAdded?: (expense: Expense) => void;
+  expenseToEdit?: Expense | null;
+  onCancelEdit?: () => void;
 }
 
-const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
+const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded, expenseToEdit, onCancelEdit }) => {
   const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
   const { toast } = useToast();
   
@@ -45,6 +46,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
 
+  // Effect to handle editing expenses
+  useEffect(() => {
+    if (expenseToEdit) {
+      setAmount(expenseToEdit.amount.toString());
+      setCategory(expenseToEdit.category);
+      setDescription(expenseToEdit.description);
+      setDate(new Date(expenseToEdit.date));
+      setIsEditing(true);
+      setCurrentExpenseId(expenseToEdit.id);
+    }
+  }, [expenseToEdit]);
+
   const resetForm = () => {
     setAmount('');
     setCategory('lunch');
@@ -52,6 +65,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
     setDate(new Date());
     setIsEditing(false);
     setCurrentExpenseId(null);
+    if (onCancelEdit) {
+      onCancelEdit();
+    }
   };
 
   const handleAddExpense = (e: React.FormEvent) => {
