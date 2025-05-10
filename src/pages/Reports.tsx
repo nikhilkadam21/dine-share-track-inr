@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePdfExport } from '@/hooks/usePdfExport';
@@ -106,7 +107,7 @@ const Reports: React.FC = () => {
       endDate,
     };
 
-    exportToPdf('Expense Report', {
+    exportToPdf('Dinner Expense Report', {
       dateRange,
       categories: selectedCategories.length > 0 ? selectedCategories : undefined,
       userName: userProfile.name || 'User',

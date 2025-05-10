@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,7 +78,7 @@ const SharedExpense: React.FC<SharedExpenseProps> = ({ expenses }) => {
       return;
     }
     
-    exportToPdf('My Expense Summary', {
+    exportToPdf('My Dinner Expense Report', {
       userName: userProfile.name || 'User',
     });
   };

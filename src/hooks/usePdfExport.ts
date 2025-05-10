@@ -69,65 +69,69 @@ export const usePdfExport = () => {
         return;
       }
       
-      // Create PDF document with custom font for better appearance
+      // Create PDF document with professional appearance
       const doc = new jsPDF();
-      
-      // Add a gradient background for 3D effect
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       
-      // Create gradient background
-      const addGradientBackground = () => {
-        doc.saveGraphicsState();
-        doc.setFillColor(255, 240, 230); // Light orange background
-        doc.rect(0, 0, pageWidth, pageHeight, 'F');
-        
-        // Add subtle pattern for 3D effect
-        doc.setDrawColor(255, 126, 69, 0.1);
-        doc.setLineWidth(0.5);
-        for (let i = 0; i < pageWidth; i += 10) {
-          doc.line(i, 0, i, pageHeight);
-        }
-        doc.restoreGraphicsState();
-      };
+      // Set document properties
+      doc.setProperties({
+        title: title,
+        subject: 'Expense Report',
+        author: userProfile.name || 'DineShareTrack User',
+        creator: 'DineShareTrack'
+      });
       
-      addGradientBackground();
+      // Professional header
+      doc.setFillColor(245, 245, 245); // Light gray background
+      doc.rect(0, 0, pageWidth, 40, 'F');
       
-      // Add decorative header
-      doc.setFillColor(255, 126, 69); // food-orange color
-      doc.roundedRect(10, 10, pageWidth - 20, 25, 3, 3, 'F');
-      
-      // Add title with 3D text effect
-      doc.setTextColor(255, 255, 255);
+      // Title
+      doc.setTextColor(50, 50, 50);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.text(title, 15, 25);
+      doc.setFontSize(20);
+      doc.text(title, 15, 20);
       
-      // Add shadow effect
-      doc.setFillColor(0, 0, 0, 0.1);
-      doc.roundedRect(10, 10, pageWidth - 20, 26, 3, 3, 'F');
+      // Add logo/app name
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("DineShareTrack", pageWidth - 15, 15, { align: 'right' });
       
-      // Add user name
-      const userName = options?.userName || userProfile.name || 'User';
-      doc.setTextColor(255, 255, 255);
+      // User information section
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(15, 45, pageWidth - 30, 40, 3, 3, 'F');
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(15, 45, pageWidth - 30, 40, 3, 3, 'S');
+      
+      doc.setTextColor(50, 50, 50);
       doc.setFontSize(12);
-      doc.text(`Report for: ${userName}`, pageWidth - 15, 25, { align: 'right' });
+      doc.setFont("helvetica", "bold");
+      doc.text("User Information", 20, 55);
       
-      // Add date range if provided
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      
+      // User details
+      const userName = userProfile.name || options?.userName || 'User';
+      const userEmail = userProfile.email || 'Not provided';
+      
+      doc.text(`Name: ${userName}`, 20, 65);
+      doc.text(`Email: ${userEmail}`, 20, 72);
+      
+      // Date range if provided
       if (options?.dateRange) {
-        const startDate = format(new Date(options.dateRange.startDate), 'PPP');
-        const endDate = format(new Date(options.dateRange.endDate), 'PPP');
-        doc.setFontSize(12);
-        doc.setTextColor(50, 50, 50);
-        doc.text(`Period: ${startDate} - ${endDate}`, 15, 45);
+        const startDate = format(new Date(options.dateRange.startDate), 'MMMM d, yyyy');
+        const endDate = format(new Date(options.dateRange.endDate), 'MMMM d, yyyy');
+        doc.text(`Report Period: ${startDate} — ${endDate}`, 20, 79);
       }
       
-      // Add timestamp
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Generated on: ${format(new Date(), 'PPPp')}`, 15, 52);
+      // Generated date/time
+      doc.setTextColor(100, 100, 100);
+      doc.setFontSize(9);
+      doc.text(`Generated on: ${format(new Date(), 'MMMM d, yyyy, h:mm a')}`, pageWidth - 20, 79, { align: 'right' });
       
-      // Organize expenses by date for daily spending
+      // Daily summary table
       const expensesByDate = filteredExpenses.reduce((acc, expense) => {
         const dateKey = format(new Date(expense.date), 'yyyy-MM-dd');
         if (!acc[dateKey]) {
@@ -141,69 +145,61 @@ export const usePdfExport = () => {
       const dailyTotals = Object.entries(expensesByDate).map(([date, dayExpenses]) => {
         const total = dayExpenses.reduce((sum, exp) => sum + exp.amount, 0);
         return {
-          date: format(new Date(date), 'dd MMM yyyy'),
-          total,
-          count: dayExpenses.length
+          date: format(new Date(date), 'MMM dd, yyyy'),
+          count: dayExpenses.length,
+          total
         };
       });
       
-      // Add daily spending summary with 3D effect
-      doc.setFillColor(240, 240, 240);
-      doc.roundedRect(15, 60, pageWidth - 30, 40, 3, 3, 'F');
-      doc.setDrawColor(220, 220, 220);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(15, 60, pageWidth - 30, 40, 3, 3, 'S');
+      // Sort by date (newest first)
+      dailyTotals.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime());
       
-      doc.setTextColor(60, 60, 60);
-      doc.setFontSize(14);
-      doc.text("Daily Spending Summary", 20, 70);
+      // Add daily spending table
+      doc.setTextColor(50, 50, 50);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Daily Expense Summary", 15, 100);
       
       // Create daily spending table
       const dailyTableData = dailyTotals.map(day => [
         day.date,
-        day.count.toString() + (day.count === 1 ? ' expense' : ' expenses'),
+        day.count.toString(),
         `₹${day.total.toLocaleString('en-IN', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         })}`
       ]);
       
-      // Only show last 5 days in summary to avoid overcrowding
-      const recentDailyData = dailyTableData.slice(Math.max(0, dailyTableData.length - 5));
-      
       autoTable(doc, {
-        startY: 75,
-        head: [['Date', 'Transactions', 'Amount']],
-        body: recentDailyData,
+        startY: 105,
+        head: [['Date', 'Number of Expenses', 'Total Amount']],
+        body: dailyTableData,
         theme: 'striped',
         headStyles: {
-          fillColor: [255, 126, 69],
+          fillColor: [70, 70, 70],
           textColor: [255, 255, 255],
-          fontStyle: 'bold'
+          fontStyle: 'bold',
+          halign: 'center'
         },
+        columnStyles: {
+          0: { halign: 'left' },
+          1: { halign: 'center' },
+          2: { halign: 'right' }
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        margin: { left: 15, right: 15 },
         styles: {
-          overflow: 'linebreak',
           fontSize: 10,
-          cellPadding: 3
-        },
-        margin: { left: 20, right: 20 }
+          cellPadding: 4,
+          lineColor: [200, 200, 200]
+        }
       });
       
-      // Prepare data for main expense table
-      const tableData = filteredExpenses.map(expense => {
-        return [
-          format(new Date(expense.date), 'yyyy-MM-dd'),
-          expense.category.charAt(0).toUpperCase() + expense.category.slice(1),
-          expense.description || 'No description',
-          `₹${expense.amount.toLocaleString('en-IN', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}`
-        ];
-      });
-      
-      // Add summary data
-      const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      // Add page break
+      doc.addPage();
       
       // Group by category
       const categoryTotals: Record<string, number> = {};
@@ -214,39 +210,69 @@ export const usePdfExport = () => {
         categoryTotals[expense.category] += expense.amount;
       });
       
+      // Prepare data for main expense table
+      const tableData = filteredExpenses.map(expense => {
+        return [
+          format(new Date(expense.date), 'MMM dd, yyyy'),
+          expense.category.charAt(0).toUpperCase() + expense.category.slice(1),
+          expense.description || 'No description',
+          `₹${expense.amount.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}`
+        ];
+      });
+      
+      // Sort by date (newest first)
+      tableData.sort((a, b) => {
+        const dateA = new Date(a[0]);
+        const dateB = new Date(b[0]);
+        return dateB.getTime() - dateA.getTime();
+      });
+      
+      doc.setTextColor(50, 50, 50);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text("Detailed Expense Entries", 15, 20);
+      
       // Create detailed expense table
-      doc.addPage();
-      addGradientBackground();
-      
-      doc.setFillColor(255, 126, 69);
-      doc.roundedRect(10, 10, pageWidth - 20, 20, 3, 3, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(16);
-      doc.text("Detailed Expenses", 15, 23);
-      
       autoTable(doc, {
+        startY: 25,
         head: [['Date', 'Category', 'Description', 'Amount']],
         body: tableData,
-        startY: 40,
-        styles: {
-          fontSize: 10,
-          cellPadding: 4
-        },
+        theme: 'striped',
         headStyles: {
-          fillColor: [255, 126, 69],
-          textColor: [255, 255, 255]
+          fillColor: [70, 70, 70],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 'auto' },
+          1: { cellWidth: 'auto' },
+          2: { cellWidth: 'auto' },
+          3: { halign: 'right', cellWidth: 'auto' }
         },
         alternateRowStyles: {
-          fillColor: [252, 246, 240]
-        }
+          fillColor: [245, 245, 245]
+        },
+        styles: {
+          fontSize: 9,
+          cellPadding: 4,
+          lineColor: [200, 200, 200]
+        },
+        margin: { left: 15, right: 15 }
       });
       
       // Add summary
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
-      doc.setFontSize(14);
-      doc.setTextColor(60, 60, 60);
+      const finalY = (doc as any).lastAutoTable.finalY + 15;
+      
+      // Add Category Summary
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(50, 50, 50);
       doc.text('Category Summary', 15, finalY);
       
+      const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       const summaryData = Object.entries(categoryTotals).map(([category, amount]) => {
         return [
           category.charAt(0).toUpperCase() + category.slice(1),
@@ -257,6 +283,7 @@ export const usePdfExport = () => {
         ];
       });
       
+      // Add total row
       summaryData.push([
         'Total', 
         `₹${totalAmount.toLocaleString('en-IN', {
@@ -266,49 +293,60 @@ export const usePdfExport = () => {
       ]);
       
       autoTable(doc, {
-        body: summaryData,
         startY: finalY + 5,
+        body: summaryData,
+        theme: 'plain',
         styles: {
           fontSize: 10,
+          lineColor: [200, 200, 200]
         },
         columnStyles: {
           0: { fontStyle: 'bold' },
           1: { halign: 'right' }
         },
         alternateRowStyles: {
-          fillColor: [252, 246, 240]
-        }
+          fillColor: [245, 245, 245]
+        },
+        margin: { left: 15, right: 15 }
       });
+
+      // Add thank you message
+      const summaryFinalY = (doc as any).lastAutoTable.finalY + 15;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        "Thank you for using DineShareTrack to manage your expenses.",
+        pageWidth / 2,
+        summaryFinalY,
+        { align: 'center' }
+      );
       
-      // Add decorative footer with 3D effect
+      // Add footer to all pages
       const addFooter = () => {
         const pageCount = (doc as any).internal.getNumberOfPages();
         
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
           
-          // Add gradient footer
-          doc.setFillColor(255, 126, 69, 0.8);
-          doc.roundedRect(10, pageHeight - 20, pageWidth - 20, 15, 2, 2, 'F');
-          
-          // Add shadow
-          doc.setFillColor(0, 0, 0, 0.05);
-          doc.roundedRect(10, pageHeight - 19, pageWidth - 20, 15, 2, 2, 'F');
-          
-          doc.setFontSize(9);
-          doc.setTextColor(255, 255, 255);
-          doc.text(
-            'Generated by DineShareTrack',
-            doc.internal.pageSize.getWidth() / 2,
-            doc.internal.pageSize.getHeight() - 12,
-            { align: 'center' }
-          );
+          // Add footer
+          doc.setFillColor(245, 245, 245);
+          doc.rect(0, pageHeight - 20, pageWidth, 20, 'F');
           
           doc.setFontSize(8);
+          doc.setTextColor(120, 120, 120);
+          doc.setFont("helvetica", "normal");
+          doc.text(
+            'Generated by DineShareTrack',
+            15,
+            pageHeight - 10
+          );
+          
           doc.text(
             `Page ${i} of ${pageCount}`,
-            doc.internal.pageSize.getWidth() - 20,
-            doc.internal.pageSize.getHeight() - 12
+            pageWidth - 15,
+            pageHeight - 10,
+            { align: 'right' }
           );
         }
       };
