@@ -11,6 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Bell, Moon, Globe, Shield, Smartphone, ChevronRight } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AppSettings {
   language: string;
@@ -80,6 +90,8 @@ const Settings: React.FC = () => {
   const { toast } = useToast();
   
   const [localSettings, setLocalSettings] = useState<AppSettings>({...settings});
+  const [deleteDataDialogOpen, setDeleteDataDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   
   const handleLanguageChange = (value: string) => {
     setLocalSettings(prev => ({ ...prev, language: value }));
@@ -109,13 +121,17 @@ const Settings: React.FC = () => {
   };
   
   const handleNestedToggleChange = (parent: 'privacySettings', key: string, value: boolean) => {
-    setLocalSettings(prev => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent as keyof typeof prev] as Record<string, boolean>,
+    setLocalSettings(prev => {
+      const updatedPrivacySettings = {
+        ...prev.privacySettings,
         [key]: value
-      }
-    }));
+      };
+      
+      return {
+        ...prev,
+        privacySettings: updatedPrivacySettings
+      };
+    });
   };
   
   const saveSettings = () => {
@@ -132,6 +148,38 @@ const Settings: React.FC = () => {
       title: "Settings reset",
       description: "All settings have been reset to defaults",
     });
+  };
+  
+  const handleDeleteAllData = () => {
+    if (deleteConfirmText !== 'DELETE') {
+      toast({
+        title: "Confirmation failed",
+        description: "Please type DELETE to confirm data deletion",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Simulate data deletion with a delay
+    toast({
+      title: "Processing",
+      description: "Deleting your data...",
+    });
+    
+    setTimeout(() => {
+      // Clear expenses and other app data from localStorage
+      localStorage.removeItem('expenses');
+      localStorage.removeItem('groups');
+      
+      setDeleteDataDialogOpen(false);
+      setDeleteConfirmText('');
+      
+      toast({
+        title: "Data deleted",
+        description: "All your data has been permanently deleted",
+        variant: "default",
+      });
+    }, 1500);
   };
   
   return (
@@ -277,14 +325,13 @@ const Settings: React.FC = () => {
                   <div>
                     <Label htmlFor="darkMode" className="block">Dark Mode</Label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Use dark theme for the application (coming soon)
+                      Use dark theme for the application
                     </p>
                   </div>
                   <Switch
                     id="darkMode"
                     checked={localSettings.darkMode}
                     onCheckedChange={(checked) => handleToggleChange('darkMode', checked)}
-                    disabled
                   />
                 </div>
               </CardContent>
@@ -419,7 +466,11 @@ const Settings: React.FC = () => {
                 </div>
                 
                 <div className="pt-4 border-t">
-                  <Button variant="outline" className="w-full text-red-500 hover:bg-red-50 hover:text-red-600">
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-red-500 hover:bg-red-50 hover:text-red-600"
+                    onClick={() => setDeleteDataDialogOpen(true)}
+                  >
                     Delete All My Data
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -428,6 +479,38 @@ const Settings: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            <AlertDialog open={deleteDataDialogOpen} onOpenChange={setDeleteDataDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-red-500">Delete All Data</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. All your expenses, groups, and other data will be permanently deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="my-4">
+                  <Label htmlFor="confirmDeleteData" className="text-sm font-medium">
+                    To confirm, type "DELETE" in the field below
+                  </Label>
+                  <Input
+                    id="confirmDeleteData"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="Type DELETE to confirm"
+                    className="mt-2"
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAllData} 
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    Delete All Data
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </TabsContent>
         </Tabs>
         

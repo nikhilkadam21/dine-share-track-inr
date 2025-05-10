@@ -2,7 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { 
   Menu, 
   User, 
@@ -12,12 +17,15 @@ import {
   Settings as SettingsIcon,
   Sun,
   Moon,
-  LogOut
+  LogOut,
+  Search
 } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { UserProfile } from '@/data/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -25,6 +33,10 @@ const Navbar: React.FC = () => {
   const [darkMode, setDarkMode] = useLocalStorage('darkMode', false);
   const [profile] = useLocalStorage<UserProfile | null>('user-profile', null);
   const { user, signOut } = useAuth();
+  
+  // Search functionality
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   useEffect(() => {
     const handleScroll = () => {
@@ -46,6 +58,14 @@ const Navbar: React.FC = () => {
   
   const getInitial = (name: string) => {
     return name?.charAt(0) || 'U';
+  };
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Implement search functionality here
+    console.log('Searching for:', searchQuery);
+    // Close the dialog after searching
+    setSearchOpen(false);
   };
   
   return (
@@ -122,6 +142,14 @@ const Navbar: React.FC = () => {
                   <span>Settings</span>
                 </Button>
               </Link>
+              <Button 
+                variant="ghost"
+                className="text-sm font-medium flex items-center gap-1 transition-all"
+                onClick={() => setSearchOpen(true)}
+              >
+                <Search className="h-4 w-4" />
+                <span>Search</span>
+              </Button>
             </div>
             
             <div className="flex items-center space-x-3">
@@ -196,6 +224,10 @@ const Navbar: React.FC = () => {
                         <span>Settings</span>
                       </DropdownMenuItem>
                     </Link>
+                    <DropdownMenuItem onClick={() => setSearchOpen(true)}>
+                      <Search className="mr-2 h-4 w-4" />
+                      <span>Search</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => signOut()}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign out</span>
@@ -227,6 +259,30 @@ const Navbar: React.FC = () => {
           </div>
         )}
       </nav>
+      
+      {/* Global Search Dialog */}
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Search</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSearch} className="space-y-4 mt-2">
+            <Input 
+              placeholder="Search expenses, groups, etc..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+              autoFocus
+            />
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" type="button" onClick={() => setSearchOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Search</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };
