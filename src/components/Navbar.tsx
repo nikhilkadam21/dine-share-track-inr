@@ -1,6 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu, 
@@ -18,7 +17,9 @@ import {
   Sun,
   Moon,
   LogOut,
-  Search
+  Search,
+  X,
+  ArrowRight
 } from 'lucide-react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { UserProfile } from '@/data/types';
@@ -26,17 +27,39 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useToast } from './ui/use-toast';
+
+// Mock suggestion data - in real app this would come from a backend
+const mockSuggestions = {
+  'food': ['Chinese Food', 'Italian Food', 'Fast Food', 'Food Delivery'],
+  'rent': ['Apartment Rent', 'House Rent', 'Office Rent'],
+  'grocery': ['Weekly Grocery', 'Monthly Grocery', 'Grocery Budget'],
+  'travel': ['Travel Expenses', 'Business Travel', 'Vacation Travel'],
+  'dinner': ['Team Dinner', 'Family Dinner', 'Business Dinner'],
+  'coffee': ['Morning Coffee', 'Coffee Budget', 'Coffee Shop'],
+};
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [darkMode, setDarkMode] = useLocalStorage('darkMode', false);
   const [profile] = useLocalStorage<UserProfile | null>('user-profile', null);
   const { user, signOut } = useAuth();
+  const { toast } = useToast();
   
   // Search functionality
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const debouncedQuery = useDebounce(searchQuery, 300);
+  
+  // Mobile search state
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   
   useEffect(() => {
     const handleScroll = () => {
@@ -54,6 +77,47 @@ const Navbar: React.FC = () => {
     }
   }, [darkMode]);
   
+  // Handle clicks outside of suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current && 
+        !suggestionsRef.current.contains(event.target as Node) &&
+        searchInputRef.current && 
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
+  // Generate suggestions based on search query
+  useEffect(() => {
+    if (debouncedQuery && debouncedQuery.length >= 2) {
+      // Check mock data first
+      const directMatches = mockSuggestions[debouncedQuery.toLowerCase() as keyof typeof mockSuggestions];
+      if (directMatches) {
+        setSuggestions(directMatches);
+        setShowSuggestions(true);
+        return;
+      }
+      
+      // Otherwise find partial matches
+      const allSuggestions = Object.values(mockSuggestions).flat();
+      const filteredSuggestions = allSuggestions.filter(suggestion => 
+        suggestion.toLowerCase().includes(debouncedQuery.toLowerCase())
+      );
+      
+      setSuggestions(filteredSuggestions.slice(0, 5));
+      setShowSuggestions(filteredSuggestions.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [debouncedQuery]);
+  
   const isActive = (path: string) => location.pathname === path;
   
   const getInitial = (name: string) => {
@@ -62,10 +126,41 @@ const Navbar: React.FC = () => {
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement search functionality here
-    console.log('Searching for:', searchQuery);
-    // Close the dialog after searching
+    if (!searchQuery.trim()) return;
+    
+    // Navigate to search results
+    navigate(`/reports?search=${encodeURIComponent(searchQuery.trim())}`);
+    
+    // Close dialogs
     setSearchOpen(false);
+    setMobileSearchOpen(false);
+    setShowSuggestions(false);
+    
+    // Show toast
+    toast({
+      title: "Search initiated",
+      description: `Searching for "${searchQuery}"`,
+    });
+  };
+  
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    navigate(`/reports?search=${encodeURIComponent(suggestion)}`);
+    setShowSuggestions(false);
+    setSearchOpen(false);
+    setMobileSearchOpen(false);
+  };
+  
+  const toggleMobileSearch = () => {
+    setMobileSearchOpen(!mobileSearchOpen);
+    if (!mobileSearchOpen) {
+      setTimeout(() => {
+        const mobileInput = document.getElementById('mobile-search-input');
+        if (mobileInput) {
+          mobileInput.focus();
+        }
+      }, 100);
+    }
   };
   
   return (
@@ -74,6 +169,51 @@ const Navbar: React.FC = () => {
         scrolled ? 'shadow-md' : 'shadow-sm'
       }`}
     >
+      {/* Mobile Search Bar (Overlay) */}
+      {mobileSearchOpen && (
+        <div className="absolute inset-0 bg-white dark:bg-gray-900 z-[51] p-3 flex flex-col sm:hidden">
+          <div className="flex items-center mb-2">
+            <Input
+              id="mobile-search-input"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search expenses, groups..."
+              className="flex-grow"
+              autoFocus
+            />
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="ml-2" 
+              onClick={toggleMobileSearch}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          
+          {showSuggestions && suggestions.length > 0 && (
+            <div 
+              ref={suggestionsRef}
+              className="bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 w-full"
+            >
+              {suggestions.map((suggestion, i) => (
+                <div 
+                  key={i}
+                  className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                >
+                  <div className="flex items-center">
+                    <Search className="h-4 w-4 text-gray-500 dark:text-gray-400 mr-2" />
+                    <span>{suggestion}</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         <Link to="/" className="flex items-center group">
           <div className="w-8 h-8 bg-gradient-to-br from-food-orange to-food-yellow rounded-full flex items-center justify-center mr-2 shadow-md group-hover:shadow-lg transition-all">
@@ -153,6 +293,16 @@ const Navbar: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-3">
+              {/* Mobile search button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="sm:hidden"
+                onClick={toggleMobileSearch}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+              
               <Button
                 variant="ghost"
                 size="icon"
@@ -224,7 +374,7 @@ const Navbar: React.FC = () => {
                         <span>Settings</span>
                       </DropdownMenuItem>
                     </Link>
-                    <DropdownMenuItem onClick={() => setSearchOpen(true)}>
+                    <DropdownMenuItem onClick={() => toggleMobileSearch()}>
                       <Search className="mr-2 h-4 w-4" />
                       <span>Search</span>
                     </DropdownMenuItem>
@@ -260,20 +410,45 @@ const Navbar: React.FC = () => {
         )}
       </nav>
       
-      {/* Global Search Dialog */}
+      {/* Desktop Search Dialog */}
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Search</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSearch} className="space-y-4 mt-2">
-            <Input 
-              placeholder="Search expenses, groups, etc..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
-              autoFocus
-            />
+            <div className="relative">
+              <Input 
+                ref={searchInputRef}
+                placeholder="Search expenses, groups, etc..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+                autoFocus
+              />
+              
+              {showSuggestions && suggestions.length > 0 && (
+                <div 
+                  ref={suggestionsRef}
+                  className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-10"
+                >
+                  {suggestions.map((suggestion, i) => (
+                    <div 
+                      key={i}
+                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer flex items-center justify-between"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      <div className="flex items-center">
+                        <Search className="h-4 w-4 text-gray-500 dark:text-gray-400 mr-2" />
+                        <span>{suggestion}</span>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <div className="flex justify-end space-x-2">
               <Button variant="outline" type="button" onClick={() => setSearchOpen(false)}>
                 Cancel
