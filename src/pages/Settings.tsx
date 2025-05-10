@@ -108,11 +108,11 @@ const Settings: React.FC = () => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
   };
   
-  const handleNestedToggleChange = (parent: keyof AppSettings, key: string, value: boolean) => {
+  const handleNestedToggleChange = (parent: 'privacySettings', key: string, value: boolean) => {
     setLocalSettings(prev => ({
       ...prev,
       [parent]: {
-        ...prev[parent as keyof typeof prev],
+        ...prev[parent as keyof typeof prev] as Record<string, boolean>,
         [key]: value
       }
     }));

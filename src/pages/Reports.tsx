@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { usePdfExport } from '@/hooks/usePdfExport';
 import Layout from '@/components/Layout';
@@ -18,7 +18,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, subDays, subMonths, subYears } from 'date-fns';
-import { Loader2, FileDown, Check, FileText, Search, Filter, Group, SortAscending } from 'lucide-react';
+import { Loader2, FileDown, Check, FileText, Search, Filter, Group, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -78,7 +78,10 @@ const Reports: React.FC = () => {
   const availableGroups = useMemo(() => {
     const groups = expenses
       .filter(expense => expense.groupId)
-      .map(expense => ({ id: expense.groupId, name: expense.groupName || 'Unknown Group' }));
+      .map(expense => ({ 
+        id: expense.groupId, 
+        name: expense.groupId || 'Unknown Group' 
+      }));
     
     // Remove duplicates
     return Array.from(new Map(groups.map(group => [group.id, group])).values());
@@ -113,7 +116,7 @@ const Reports: React.FC = () => {
         return (
           expense.description?.toLowerCase().includes(searchLower) ||
           expense.category.toLowerCase().includes(searchLower) ||
-          expense.groupName?.toLowerCase().includes(searchLower) ||
+          (expense.groupId || '').toLowerCase().includes(searchLower) ||
           new Date(expense.date).toLocaleDateString().includes(searchTerm)
         );
       }
@@ -201,7 +204,7 @@ const Reports: React.FC = () => {
     exportToPdf('Dinner Expense Report', {
       dateRange,
       categories: selectedCategories.length > 0 ? selectedCategories : undefined,
-      groupIds: selectedGroups.length > 0 ? selectedGroups : undefined,
+      groupId: selectedGroups.length > 0 ? selectedGroups[0] : undefined,
       userName: userProfile.name || 'User',
     });
   };
@@ -296,7 +299,10 @@ const Reports: React.FC = () => {
                       onClick={toggleSortOrder}
                       title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
                     >
-                      <SortAscending className="h-4 w-4" />
+                      {sortOrder === 'asc' ? 
+                        <ArrowUpAZ className="h-4 w-4" /> : 
+                        <ArrowDownAZ className="h-4 w-4" />
+                      }
                     </Button>
                     <Input
                       placeholder="Search expenses..."
@@ -465,7 +471,7 @@ const Reports: React.FC = () => {
                             </TableCell>
                             <TableCell className="capitalize">{expense.category}</TableCell>
                             <TableCell>{expense.description || '-'}</TableCell>
-                            <TableCell>{expense.groupName || '-'}</TableCell>
+                            <TableCell>{expense.groupId || '-'}</TableCell>
                             <TableCell className="text-right">
                               ₹{expense.amount.toLocaleString('en-IN')}
                             </TableCell>

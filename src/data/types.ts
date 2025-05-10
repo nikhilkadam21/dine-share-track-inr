@@ -16,6 +16,7 @@ export interface Expense {
   date: string;
   tags?: string[];
   groupId?: string; // Reference to a group if this is a group expense
+  groupName?: string; // Name of the group for display purposes
   splitDetails?: SplitDetail[]; // Details about how the expense is split
 }
 
