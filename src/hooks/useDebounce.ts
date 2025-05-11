@@ -27,7 +27,22 @@ export function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// Add a helper function to check if a string contains a substring (case insensitive)
+// Helper function to check if a string contains a substring (case insensitive)
 export function containsText(text: string, searchQuery: string): boolean {
   return text.toLowerCase().includes(searchQuery.toLowerCase());
+}
+
+// Helper function to filter expenses by search term
+export function filterExpensesBySearchTerm(expenses: any[], searchTerm: string): any[] {
+  if (!searchTerm.trim()) return [];
+  
+  return expenses.filter(expense => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (expense.description && expense.description.toLowerCase().includes(searchLower)) ||
+      (expense.category && expense.category.toLowerCase().includes(searchLower)) ||
+      (expense.amount && expense.amount.toString().includes(searchTerm)) ||
+      (expense.groupId && expense.groupId.toLowerCase().includes(searchLower))
+    );
+  }).slice(0, 5); // Limit to 5 results
 }

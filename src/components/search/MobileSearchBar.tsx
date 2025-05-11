@@ -4,19 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, X, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useDebounce } from '@/hooks/useDebounce';
-
-// Mock suggestion data
-const suggestionCategories = {
-  expenses: ['Food Expenses', 'Rent Expenses', 'Travel Expenses', 'Coffee Expenses', 'Grocery Expenses'],
-  groups: ['Family Group', 'Friends Group', 'Roommates Group', 'Office Group', 'Trip Group'],
-  categories: ['Food', 'Rent', 'Utilities', 'Entertainment', 'Transport']
-};
-
-type SuggestionType = {
-  text: string;
-  category: string;
-};
+import { useDebounce, filterExpensesBySearchTerm } from '@/hooks/useDebounce';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Expense } from '@/data/types';
 
 interface MobileSearchBarProps {
   onClose: () => void;
@@ -25,12 +15,13 @@ interface MobileSearchBarProps {
 
 const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<SuggestionType[]>([]);
+  const [suggestions, setSuggestions] = useState<Array<{text: string; category: string; amount?: number}>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
   const debouncedQuery = useDebounce(searchQuery, 200);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const [expenses] = useLocalStorage<Expense[]>('expenses', []);
 
   useEffect(() => {
     // Focus input when component mounts
@@ -41,25 +32,22 @@ const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
 
   useEffect(() => {
     if (debouncedQuery && debouncedQuery.length >= 1) {
-      const results: SuggestionType[] = [];
+      // Filter expenses by search term
+      const filteredExpenses = filterExpensesBySearchTerm(expenses, debouncedQuery);
       
-      // Search through all categories
-      Object.entries(suggestionCategories).forEach(([category, items]) => {
-        const matches = items.filter(item => 
-          item.toLowerCase().includes(debouncedQuery.toLowerCase())
-        );
-        
-        matches.forEach(match => {
-          results.push({ text: match, category });
-        });
-      });
+      // Convert to suggestions format
+      const expenseSuggestions = filteredExpenses.map(expense => ({
+        text: expense.description || `${expense.category} expense`,
+        category: expense.category,
+        amount: expense.amount,
+      }));
       
-      setSuggestions(results.slice(0, 5));
-      setShowSuggestions(results.length > 0);
+      setSuggestions(expenseSuggestions);
+      setShowSuggestions(expenseSuggestions.length > 0);
     } else {
       setShowSuggestions(false);
     }
-  }, [debouncedQuery]);
+  }, [debouncedQuery, expenses]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,13 +57,13 @@ const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
     }
   };
 
-  const handleSuggestionClick = (suggestion: SuggestionType) => {
+  const handleSuggestionClick = (suggestion: {text: string; category: string}) => {
     navigate(`/reports?search=${encodeURIComponent(suggestion.text)}&category=${suggestion.category}`);
     onClose();
   };
 
   return (
-    <div className="absolute inset-0 bg-white dark:bg-gray-900 z-[51] p-3 flex flex-col">
+    <div className="fixed inset-0 bg-white dark:bg-gray-900 z-[100] p-3 flex flex-col">
       <form onSubmit={handleSubmit} className="mb-2">
         <div className="flex items-center">
           <Input
@@ -125,6 +113,13 @@ const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
                 <span>{suggestion.text}</span>
               </div>
               <div className="flex items-center">
+                {suggestion.amount !== undefined && (
+                  <span className={`text-xs mr-2 font-medium ${
+                    mode === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                  }`}>
+                    ₹{suggestion.amount.toLocaleString('en-IN')}
+                  </span>
+                )}
                 <span className={`text-xs mr-2 px-2 py-1 rounded-full ${
                   mode === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'
                 }`}>

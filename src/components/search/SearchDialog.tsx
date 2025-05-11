@@ -1,24 +1,14 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useDebounce, filterExpensesBySearchTerm } from '@/hooks/useDebounce';
 import { useToast } from '@/components/ui/use-toast';
 import { Search, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-// Mock suggestion data - in real app this would come from a backend
-const suggestionCategories = {
-  expenses: ['Food Expenses', 'Rent Expenses', 'Travel Expenses', 'Coffee Expenses', 'Grocery Expenses'],
-  groups: ['Family Group', 'Friends Group', 'Roommates Group', 'Office Group', 'Trip Group'],
-  categories: ['Food', 'Rent', 'Utilities', 'Entertainment', 'Transport']
-};
-
-type SuggestionType = {
-  text: string;
-  category: string;
-};
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Expense } from '@/data/types';
 
 interface SearchDialogProps {
   open: boolean;
@@ -28,13 +18,14 @@ interface SearchDialogProps {
 
 const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<SuggestionType[]>([]);
+  const [suggestions, setSuggestions] = useState<Array<{text: string; category: string; amount?: number}>>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debouncedQuery = useDebounce(searchQuery, 200);
   const { toast } = useToast();
+  const [expenses] = useLocalStorage<Expense[]>('expenses', []);
 
   // Handle clicks outside of suggestions
   useEffect(() => {
@@ -56,25 +47,22 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
   // Generate suggestions based on search query
   useEffect(() => {
     if (debouncedQuery && debouncedQuery.length >= 1) {
-      const results: SuggestionType[] = [];
+      // Filter expenses by search term
+      const filteredExpenses = filterExpensesBySearchTerm(expenses, debouncedQuery);
       
-      // Search through all categories
-      Object.entries(suggestionCategories).forEach(([category, items]) => {
-        const matches = items.filter(item => 
-          item.toLowerCase().includes(debouncedQuery.toLowerCase())
-        );
-        
-        matches.forEach(match => {
-          results.push({ text: match, category });
-        });
-      });
+      // Convert to suggestions format
+      const expenseSuggestions = filteredExpenses.map(expense => ({
+        text: expense.description || `${expense.category} expense`,
+        category: expense.category,
+        amount: expense.amount,
+      }));
       
-      setSuggestions(results.slice(0, 5));
-      setShowSuggestions(results.length > 0);
+      setSuggestions(expenseSuggestions);
+      setShowSuggestions(expenseSuggestions.length > 0);
     } else {
       setShowSuggestions(false);
     }
-  }, [debouncedQuery]);
+  }, [debouncedQuery, expenses]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +82,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
     });
   };
 
-  const handleSuggestionClick = (suggestion: SuggestionType) => {
+  const handleSuggestionClick = (suggestion: {text: string; category: string}) => {
     setSearchQuery(suggestion.text);
     navigate(`/reports?search=${encodeURIComponent(suggestion.text)}&category=${suggestion.category}`);
     setShowSuggestions(false);
@@ -105,7 +93,10 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Search</DialogTitle>
+          <DialogTitle>Search Expenses</DialogTitle>
+          <DialogDescription>
+            Search for expenses by description, category, or amount
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSearch} className="space-y-4 mt-2">
           <div className="relative">
@@ -144,6 +135,13 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
                       <span>{suggestion.text}</span>
                     </div>
                     <div className="flex items-center">
+                      {suggestion.amount !== undefined && (
+                        <span className={`text-xs mr-2 font-medium ${
+                          mode === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`}>
+                          ₹{suggestion.amount.toLocaleString('en-IN')}
+                        </span>
+                      )}
                       <span className={`text-xs mr-2 px-2 py-1 rounded-full ${
                         mode === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'
                       }`}>

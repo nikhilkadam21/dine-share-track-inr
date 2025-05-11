@@ -62,6 +62,15 @@ const Navbar: React.FC = () => {
     setMobileSearchOpen(!mobileSearchOpen);
   };
   
+  const openSearchBelow = (event: React.MouseEvent) => {
+    // Prevent the default behavior
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Open the search dialog
+    setSearchOpen(true);
+  };
+  
   return (
     <header 
       className={`sticky top-0 z-50 bg-white dark:bg-gray-900 transition-all duration-200 ${
@@ -147,7 +156,7 @@ const Navbar: React.FC = () => {
               <Button 
                 variant="ghost"
                 className="text-sm font-medium flex items-center gap-1 transition-all"
-                onClick={() => setSearchOpen(true)}
+                onClick={openSearchBelow}
               >
                 <Search className="h-4 w-4" />
                 <span>Search</span>
