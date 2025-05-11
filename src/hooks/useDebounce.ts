@@ -26,3 +26,8 @@ export function useDebounce<T>(value: T, delay: number): T {
 
   return debouncedValue;
 }
+
+// Add a helper function to check if a string contains a substring (case insensitive)
+export function containsText(text: string, searchQuery: string): boolean {
+  return text.toLowerCase().includes(searchQuery.toLowerCase());
+}

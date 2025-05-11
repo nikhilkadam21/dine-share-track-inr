@@ -1,0 +1,145 @@
+
+import React, { useState, useRef, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, X, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useDebounce } from '@/hooks/useDebounce';
+
+// Mock suggestion data
+const suggestionCategories = {
+  expenses: ['Food Expenses', 'Rent Expenses', 'Travel Expenses', 'Coffee Expenses', 'Grocery Expenses'],
+  groups: ['Family Group', 'Friends Group', 'Roommates Group', 'Office Group', 'Trip Group'],
+  categories: ['Food', 'Rent', 'Utilities', 'Entertainment', 'Transport']
+};
+
+type SuggestionType = {
+  text: string;
+  category: string;
+};
+
+interface MobileSearchBarProps {
+  onClose: () => void;
+  mode: 'dark' | 'light';
+}
+
+const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<SuggestionType[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const navigate = useNavigate();
+  const debouncedQuery = useDebounce(searchQuery, 200);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Focus input when component mounts
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (debouncedQuery && debouncedQuery.length >= 1) {
+      const results: SuggestionType[] = [];
+      
+      // Search through all categories
+      Object.entries(suggestionCategories).forEach(([category, items]) => {
+        const matches = items.filter(item => 
+          item.toLowerCase().includes(debouncedQuery.toLowerCase())
+        );
+        
+        matches.forEach(match => {
+          results.push({ text: match, category });
+        });
+      });
+      
+      setSuggestions(results.slice(0, 5));
+      setShowSuggestions(results.length > 0);
+    } else {
+      setShowSuggestions(false);
+    }
+  }, [debouncedQuery]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/reports?search=${encodeURIComponent(searchQuery.trim())}`);
+      onClose();
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: SuggestionType) => {
+    navigate(`/reports?search=${encodeURIComponent(suggestion.text)}&category=${suggestion.category}`);
+    onClose();
+  };
+
+  return (
+    <div className="absolute inset-0 bg-white dark:bg-gray-900 z-[51] p-3 flex flex-col">
+      <form onSubmit={handleSubmit} className="mb-2">
+        <div className="flex items-center">
+          <Input
+            ref={searchInputRef}
+            id="mobile-search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search expenses, groups..."
+            className="flex-grow"
+            autoFocus
+          />
+          <Button 
+            size="icon" 
+            variant="ghost" 
+            type="button"
+            className="ml-2" 
+            onClick={onClose}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </form>
+      
+      {showSuggestions && suggestions.length > 0 && (
+        <div 
+          ref={suggestionsRef}
+          className={`rounded-md shadow-lg border w-full ${
+            mode === 'dark' 
+              ? 'bg-gray-800 border-gray-700' 
+              : 'bg-white border-gray-200'
+          }`}
+        >
+          {suggestions.map((suggestion, i) => (
+            <div 
+              key={i}
+              className={`px-3 py-2 cursor-pointer flex items-center justify-between ${
+                mode === 'dark'
+                  ? 'hover:bg-gray-700 text-white' 
+                  : 'hover:bg-gray-100 text-gray-800'
+              }`}
+              onClick={() => handleSuggestionClick(suggestion)}
+            >
+              <div className="flex items-center">
+                <Search className={`h-4 w-4 mr-2 ${
+                  mode === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                }`} />
+                <span>{suggestion.text}</span>
+              </div>
+              <div className="flex items-center">
+                <span className={`text-xs mr-2 px-2 py-1 rounded-full ${
+                  mode === 'dark' ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'
+                }`}>
+                  {suggestion.category}
+                </span>
+                <ArrowRight className={`h-4 w-4 ${
+                  mode === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                }`} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MobileSearchBar;
