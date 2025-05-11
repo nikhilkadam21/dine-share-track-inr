@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 
 export function useDebounce<T>(value: T, delay: number): T {
@@ -35,10 +34,27 @@ export function containsText(text: string, searchQuery: string): boolean {
 
 // Helper function to filter expenses by search term
 export function filterExpensesBySearchTerm(expenses: any[], searchTerm: string): any[] {
-  if (!searchTerm?.trim() || !expenses?.length) return [];
+  if (!searchTerm?.trim()) return [];
+  if (!expenses?.length) return [];
   
+  const searchLower = searchTerm.toLowerCase();
+  
+  // First try for exact matches
+  const exactMatches = expenses.filter(expense => {
+    return (
+      (expense.description && expense.description.toLowerCase() === searchLower) ||
+      (expense.category && expense.category.toLowerCase() === searchLower) ||
+      (expense.amount && expense.amount.toString() === searchTerm)
+    );
+  });
+  
+  // If we have exact matches, return those first
+  if (exactMatches.length > 0) {
+    return exactMatches.slice(0, 5);
+  }
+  
+  // Otherwise do partial matching
   return expenses.filter(expense => {
-    const searchLower = searchTerm.toLowerCase();
     return (
       (expense.description && expense.description.toLowerCase().includes(searchLower)) ||
       (expense.category && expense.category.toLowerCase().includes(searchLower)) ||

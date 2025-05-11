@@ -27,6 +27,24 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
   const { toast } = useToast();
   const [expenses] = useLocalStorage<Expense[]>('expenses', []);
 
+  // Focus input when dialog opens
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
+  }, [open]);
+
+  // Reset search when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery('');
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [open]);
+
   // Handle clicks outside of suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,18 +86,22 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
-    // Navigate to search results
-    navigate(`/reports?search=${encodeURIComponent(searchQuery.trim())}`);
-    
-    // Close dialog
-    onOpenChange(false);
-    setShowSuggestions(false);
-    
-    // Show toast
-    toast({
-      title: "Search initiated",
-      description: `Searching for "${searchQuery}"`,
-    });
+    // Show only suggestions if there are any rather than navigating directly
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    } else {
+      // Navigate to search results only if no suggestions or user explicitly clicks search
+      navigate(`/reports?search=${encodeURIComponent(searchQuery.trim())}`);
+      
+      // Close dialog
+      onOpenChange(false);
+      
+      // Show toast
+      toast({
+        title: "Search initiated",
+        description: `Searching for "${searchQuery}"`,
+      });
+    }
   };
 
   const handleSuggestionClick = (suggestion: {text: string; category: string}) => {
@@ -91,7 +113,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md fixed top-4 mx-auto">
         <DialogHeader>
           <DialogTitle>Search Expenses</DialogTitle>
           <DialogDescription>
@@ -112,7 +134,7 @@ const SearchDialog: React.FC<SearchDialogProps> = ({ open, onOpenChange, mode })
             {showSuggestions && suggestions.length > 0 && (
               <div 
                 ref={suggestionsRef}
-                className={`absolute top-full left-0 right-0 mt-1 rounded-md shadow-lg border z-10 ${
+                className={`absolute top-full left-0 right-0 mt-1 rounded-md shadow-lg border z-50 ${
                   mode === 'dark' 
                     ? 'bg-gray-800 border-gray-700' 
                     : 'bg-white border-gray-200'

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDebounce, filterExpensesBySearchTerm } from '@/hooks/useDebounce';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Expense } from '@/data/types';
+import { useToast } from '@/components/ui/use-toast';
 
 interface MobileSearchBarProps {
   onClose: () => void;
@@ -22,6 +23,7 @@ const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [expenses] = useLocalStorage<Expense[]>('expenses', []);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Focus input when component mounts
@@ -51,13 +53,24 @@ const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
+    
+    // Show suggestions instead of immediate navigation if there are suggestions
+    if (suggestions.length > 0 && searchQuery.trim()) {
+      setShowSuggestions(true);
+    } else if (searchQuery.trim()) {
       navigate(`/reports?search=${encodeURIComponent(searchQuery.trim())}`);
+      
+      toast({
+        title: "Search initiated",
+        description: `Searching for "${searchQuery}"`,
+      });
+      
       onClose();
     }
   };
 
   const handleSuggestionClick = (suggestion: {text: string; category: string}) => {
+    setSearchQuery(suggestion.text);
     navigate(`/reports?search=${encodeURIComponent(suggestion.text)}&category=${suggestion.category}`);
     onClose();
   };
@@ -99,7 +112,7 @@ const MobileSearchBar: React.FC<MobileSearchBarProps> = ({ onClose, mode }) => {
           {suggestions.map((suggestion, i) => (
             <div 
               key={i}
-              className={`px-3 py-2 cursor-pointer flex items-center justify-between ${
+              className={`px-3 py-3 cursor-pointer flex items-center justify-between ${
                 mode === 'dark'
                   ? 'hover:bg-gray-700 text-white' 
                   : 'hover:bg-gray-100 text-gray-800'
