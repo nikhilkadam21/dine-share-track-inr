@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/components/ui/use-toast';
 import Layout from '@/components/Layout';
@@ -92,6 +92,12 @@ const Settings: React.FC = () => {
   const [localSettings, setLocalSettings] = useState<AppSettings>({...settings});
   const [deleteDataDialogOpen, setDeleteDataDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Update local settings when settings from localStorage change
+  useEffect(() => {
+    setLocalSettings({...settings});
+  }, [settings]);
   
   const handleLanguageChange = (value: string) => {
     setLocalSettings(prev => ({ ...prev, language: value }));
@@ -135,11 +141,15 @@ const Settings: React.FC = () => {
   };
   
   const saveSettings = () => {
-    setSettings(localSettings);
-    toast({
-      title: "Settings saved",
-      description: "Your preferences have been updated",
-    });
+    setIsSaving(true);
+    setTimeout(() => {
+      setSettings(localSettings);
+      setIsSaving(false);
+      toast({
+        title: "Settings saved",
+        description: "Your preferences have been updated",
+      });
+    }, 500);
   };
   
   const resetToDefaults = () => {
@@ -518,8 +528,14 @@ const Settings: React.FC = () => {
           <Button variant="outline" onClick={resetToDefaults}>
             Reset to Defaults
           </Button>
-          <Button onClick={saveSettings}>
-            Save Settings
+          <Button onClick={saveSettings} disabled={isSaving}>
+            {isSaving ? (
+              <span className="flex items-center">
+                <span className="animate-spin mr-2">⏳</span> Saving...
+              </span>
+            ) : (
+              "Save Settings"
+            )}
           </Button>
         </div>
       </div>

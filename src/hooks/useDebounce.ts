@@ -29,12 +29,13 @@ export function useDebounce<T>(value: T, delay: number): T {
 
 // Helper function to check if a string contains a substring (case insensitive)
 export function containsText(text: string, searchQuery: string): boolean {
+  if (!text || !searchQuery) return false;
   return text.toLowerCase().includes(searchQuery.toLowerCase());
 }
 
 // Helper function to filter expenses by search term
 export function filterExpensesBySearchTerm(expenses: any[], searchTerm: string): any[] {
-  if (!searchTerm.trim()) return [];
+  if (!searchTerm?.trim() || !expenses?.length) return [];
   
   return expenses.filter(expense => {
     const searchLower = searchTerm.toLowerCase();

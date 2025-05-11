@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import ProfileEditor from '@/components/ProfileEditor';
@@ -131,70 +130,7 @@ const Profile: React.FC = () => {
           </TabsContent>
         </Tabs>
         
-        <div className="mt-12 border-t pt-8">
-          <Card className="border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-900/10">
-            <CardHeader>
-              <CardTitle className="text-red-600 dark:text-red-400 flex items-center gap-2">
-                <ShieldAlert className="h-5 w-5" />
-                <span>Danger Zone</span>
-              </CardTitle>
-              <CardDescription className="text-red-600/80 dark:text-red-400/80">
-                Permanent actions that cannot be undone
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-red-100/50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/30">
-                <div>
-                  <h3 className="font-semibold text-red-700 dark:text-red-400">Delete Account</h3>
-                  <p className="text-sm text-red-600/90 dark:text-red-400/80">
-                    Once you delete your account, there is no going back. Please be certain.
-                  </p>
-                </div>
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      className="flex items-center gap-2"
-                      disabled={isDeleting}
-                    >
-                      {isDeleting ? (
-                        <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          <span>Deleting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="h-4 w-4" />
-                          <span>Delete Account</span>
-                        </>
-                      )}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your
-                        account and remove all your data from our servers.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleDeleteAccount} 
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? "Deleting..." : "Delete Account"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        
       </div>
     </Layout>
   );
