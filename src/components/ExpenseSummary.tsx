@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Expense, ExpenseCategory } from '@/data/types';
@@ -60,10 +60,37 @@ const groupByDay = (expenses: Expense[], days = 7) => {
 const COLORS = ['#FF7E45', '#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#FF5722', '#607D8B'];
 
 const ExpenseSummary: React.FC = () => {
-  const [expenses] = useLocalStorage<Expense[]>('expenses', []);
+  const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
+  // Add state to track changes in local storage
+  const [localStorageUpdate, setLocalStorageUpdate] = useState<number>(Date.now());
+  
+  // Monitor for changes in localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const currentExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+      setExpenses(currentExpenses);
+      setLocalStorageUpdate(Date.now());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Check for updates every 500ms
+    const interval = setInterval(() => {
+      const storedExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+      if (JSON.stringify(storedExpenses) !== JSON.stringify(expenses)) {
+        setExpenses(storedExpenses);
+        setLocalStorageUpdate(Date.now());
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [expenses, setExpenses]);
   
   // Force fresh calculations every time by adding a timestamp to useMemo deps
-  const forceRefresh = useMemo(() => Date.now(), [expenses]);
+  const forceRefresh = useMemo(() => Date.now(), [expenses, localStorageUpdate]);
   
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);

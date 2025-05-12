@@ -30,6 +30,20 @@ const Dashboard: React.FC = () => {
   }, [expenses]);
   
   const handleExpenseAdded = (expense: Expense) => {
+    // Get current expenses from localStorage to ensure we have the latest data
+    const currentExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+    
+    // If editing, update the existing expense
+    if (expenseToEdit) {
+      const updatedExpenses = currentExpenses.map((e: Expense) => 
+        e.id === expense.id ? expense : e
+      );
+      setExpenses(updatedExpenses);
+    } else {
+      // Add the new expense
+      setExpenses([...currentExpenses, expense]);
+    }
+    
     // Force an immediate update to the UI
     setLastUpdated(Date.now());
     setExpenseToEdit(null);
@@ -49,6 +63,7 @@ const Dashboard: React.FC = () => {
     toast({
       title: "Expense deleted",
       description: "The expense has been deleted successfully",
+      duration: 3000, // Show for 3 seconds only
     });
     
     // Force an immediate update to the UI
@@ -76,7 +91,7 @@ const Dashboard: React.FC = () => {
                         const date = new Date(expense.date);
                         return (
                           <div
-                            key={expense.id}
+                            key={`${expense.id}-${lastUpdated}`}
                             className="flex items-center justify-between p-3 bg-muted/50 rounded-md hover:bg-muted transition-colors"
                           >
                             <div className="flex items-center gap-3">
