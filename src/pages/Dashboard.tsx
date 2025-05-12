@@ -18,6 +18,7 @@ const Dashboard: React.FC = () => {
   const [expenses, setExpenses] = useLocalStorage<Expense[]>('expenses', []);
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
   const { toast } = useToast();
   
   // Force a refresh of the component state when expenses change
@@ -40,8 +41,11 @@ const Dashboard: React.FC = () => {
       );
       setExpenses(updatedExpenses);
     } else {
-      // Add the new expense
-      setExpenses([...currentExpenses, expense]);
+      // Add the new expense - ensure no duplicates
+      const isDuplicate = currentExpenses.some(e => e.id === expense.id);
+      if (!isDuplicate) {
+        setExpenses([...currentExpenses, expense]);
+      }
     }
     
     // Force an immediate update to the UI
@@ -59,6 +63,7 @@ const Dashboard: React.FC = () => {
     const updatedExpenses = expenses.filter((e) => e.id !== expense.id);
     setExpenses(updatedExpenses);
     setExpenseToDelete(null);
+    setIsDeleteDialogOpen(false);
     
     toast({
       title: "Expense deleted",
@@ -127,63 +132,18 @@ const Dashboard: React.FC = () => {
                                   <span className="sr-only">Edit</span>
                                 </Button>
                                 
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
-                                      onClick={() => setExpenseToDelete(expense)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      <span className="sr-only">Delete</span>
-                                    </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Delete Expense</DialogTitle>
-                                      <DialogDescription>
-                                        Are you sure you want to delete this expense? This action cannot be undone.
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    {expenseToDelete && (
-                                      <div className="py-4">
-                                        <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-food-green to-food-blue text-white flex items-center justify-center font-medium">
-                                              {expenseToDelete.category.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div>
-                                              <div className="font-medium capitalize">{expenseToDelete.category}</div>
-                                              <div className="text-sm text-muted-foreground">
-                                                {expenseToDelete.description || 'No description'}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div className="text-right">
-                                            <div className="font-bold">
-                                              ₹{expenseToDelete.amount.toLocaleString('en-IN')}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                              {new Date(expenseToDelete.date).toLocaleDateString('en-IN')}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                    <DialogFooter>
-                                      <Button variant="outline" onClick={() => setExpenseToDelete(null)}>
-                                        Cancel
-                                      </Button>
-                                      <Button 
-                                        variant="destructive" 
-                                        onClick={() => expenseToDelete && handleDeleteExpense(expenseToDelete)}
-                                      >
-                                        Delete
-                                      </Button>
-                                    </DialogFooter>
-                                  </DialogContent>
-                                </Dialog>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-8 w-8 p-0 rounded-full text-red-500 hover:text-red-600 hover:bg-red-50"
+                                  onClick={() => {
+                                    setExpenseToDelete(expense);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  <span className="sr-only">Delete</span>
+                                </Button>
                               </div>
                             </div>
                           </div>
@@ -213,6 +173,56 @@ const Dashboard: React.FC = () => {
           <SharedExpense expenses={expenses} />
         </div>
       </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Expense</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this expense? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {expenseToDelete && (
+            <div className="py-4">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-food-green to-food-blue text-white flex items-center justify-center font-medium">
+                    {expenseToDelete.category.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="font-medium capitalize">{expenseToDelete.category}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {expenseToDelete.description || 'No description'}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold">
+                    ₹{expenseToDelete.amount.toLocaleString('en-IN')}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(expenseToDelete.date).toLocaleDateString('en-IN')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setExpenseToDelete(null);
+              setIsDeleteDialogOpen(false);
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => expenseToDelete && handleDeleteExpense(expenseToDelete)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };

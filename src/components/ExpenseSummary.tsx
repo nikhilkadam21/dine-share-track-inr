@@ -74,14 +74,18 @@ const ExpenseSummary: React.FC = () => {
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Check for updates every 500ms
+    // Check for updates every 250ms - faster refresh rate
     const interval = setInterval(() => {
-      const storedExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
-      if (JSON.stringify(storedExpenses) !== JSON.stringify(expenses)) {
-        setExpenses(storedExpenses);
-        setLocalStorageUpdate(Date.now());
+      try {
+        const storedExpenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+        if (JSON.stringify(storedExpenses) !== JSON.stringify(expenses)) {
+          setExpenses(storedExpenses);
+          setLocalStorageUpdate(Date.now());
+        }
+      } catch (error) {
+        console.error("Error checking for expense updates:", error);
       }
-    }, 500);
+    }, 250);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
