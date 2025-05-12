@@ -24,13 +24,13 @@ const UserMenuDropdown: React.FC<UserMenuDropdownProps> = ({ profile, userEmail,
           <Avatar className="cursor-pointer transition-all hover:ring-2 hover:ring-food-orange">
             <AvatarImage src={profile?.avatar} />
             <AvatarFallback className="bg-food-green text-white">
-              {userEmail ? userEmail.charAt(0).toUpperCase() : 'U'}
+              {userEmail ? userEmail.charAt(0).toUpperCase() : 'M'}
             </AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem className="font-medium">
-            {userEmail}
+            {userEmail || 'MealSync User'}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => signOut()}>
             <LogOut className="mr-2 h-4 w-4" />

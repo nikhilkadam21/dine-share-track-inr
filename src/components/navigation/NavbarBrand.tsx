@@ -5,11 +5,15 @@ import React from 'react';
 const NavbarBrand: React.FC = () => {
   return (
     <Link to="/" className="flex items-center group">
-      <div className="w-8 h-8 bg-gradient-to-br from-food-orange to-food-yellow rounded-full flex items-center justify-center mr-2 shadow-md group-hover:shadow-lg transition-all">
-        <span className="text-white font-bold">D</span>
+      <div className="w-10 h-10 flex items-center justify-center mr-2">
+        <img 
+          src="/lovable-uploads/23d2f325-ae3d-408a-b27b-35027f5bcd82.png" 
+          alt="MealSync Logo" 
+          className="w-full h-full object-contain"
+        />
       </div>
       <span className="font-bold text-xl bg-gradient-to-r from-food-orange to-food-green bg-clip-text text-transparent">
-        DineShareTrack
+        MealSync
       </span>
     </Link>
   );

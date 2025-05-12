@@ -14,7 +14,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ darkMode, setDarkMode }) => {
       variant="ghost"
       size="icon"
       aria-label="Toggle theme"
-      className="rounded-full"
+      className="rounded-full text-food-green dark:text-food-orange"
       onClick={() => setDarkMode(!darkMode)}
     >
       {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

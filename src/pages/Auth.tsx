@@ -10,11 +10,15 @@ const Auth: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center">
       <div className="mb-6 flex items-center">
-        <div className="w-10 h-10 bg-gradient-to-br from-food-orange to-food-yellow rounded-full flex items-center justify-center shadow-md mr-3 transform transition-transform hover:rotate-12">
-          <span className="text-white font-bold text-lg">D</span>
+        <div className="w-10 h-10 flex items-center justify-center mr-3">
+          <img 
+            src="/lovable-uploads/23d2f325-ae3d-408a-b27b-35027f5bcd82.png" 
+            alt="MealSync Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
         <span className="font-bold text-xl bg-gradient-to-r from-food-orange to-food-green bg-clip-text text-transparent">
-          DineShareTrack
+          MealSync
         </span>
       </div>
       

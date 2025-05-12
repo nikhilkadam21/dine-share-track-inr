@@ -81,7 +81,7 @@ export function SignInPage() {
     <div className="grid w-full grow items-center px-4 sm:justify-center">
       <Card className="w-full sm:w-96">
         <CardHeader>
-          <CardTitle>Sign in to DineShareTrack</CardTitle>
+          <CardTitle>Sign in to MealSync</CardTitle>
           <CardDescription>Welcome back! Please sign in to continue</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignIn}>

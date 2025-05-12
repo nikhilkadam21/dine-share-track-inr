@@ -1,7 +1,6 @@
 
 import React from 'react';
 import Navbar from './Navbar';
-import { useToast } from '@/components/ui/use-toast';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -27,11 +26,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center mb-4 md:mb-0">
-              <div className="w-10 h-10 bg-gradient-to-br from-food-orange to-food-yellow rounded-full flex items-center justify-center shadow-md mr-3 transform transition-transform hover:rotate-12">
-                <span className="text-white font-bold text-lg">D</span>
+              <div className="w-10 h-10 flex items-center justify-center mr-3">
+                <img 
+                  src="/lovable-uploads/23d2f325-ae3d-408a-b27b-35027f5bcd82.png" 
+                  alt="MealSync Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               <span className="font-bold text-xl bg-gradient-to-r from-food-orange to-food-green bg-clip-text text-transparent">
-                DineShareTrack
+                MealSync
               </span>
             </div>
             
@@ -45,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           
           <div className="text-center mt-4 text-gray-500 dark:text-gray-400 text-sm">
-            <p>© {new Date().getFullYear()} DineShareTrack. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} MealSync. All rights reserved.</p>
           </div>
         </div>
       </footer>

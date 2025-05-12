@@ -85,7 +85,7 @@ export function SignUpPage() {
     <div className="grid w-full grow items-center px-4 sm:justify-center">
       <Card className="w-full sm:w-96">
         <CardHeader>
-          <CardTitle>Sign up for DineShareTrack</CardTitle>
+          <CardTitle>Sign up for MealSync</CardTitle>
           <CardDescription>Create your account to get started</CardDescription>
         </CardHeader>
         <form onSubmit={handleSignUp}>
