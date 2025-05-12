@@ -82,18 +82,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded, expenseToEdit
       return;
     }
     
+    const newOrUpdatedExpense: Expense = {
+      id: isEditing && currentExpenseId ? currentExpenseId : uuidv4(),
+      amount: Number(amount),
+      category,
+      description,
+      date: date.toISOString(),
+    };
+    
     if (isEditing && currentExpenseId) {
       // Update existing expense
       const updatedExpenses = expenses.map(exp => 
-        exp.id === currentExpenseId 
-          ? {
-              ...exp,
-              amount: Number(amount),
-              category,
-              description,
-              date: date.toISOString(),
-            }
-          : exp
+        exp.id === currentExpenseId ? newOrUpdatedExpense : exp
       );
       
       setExpenses(updatedExpenses);
@@ -102,17 +102,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded, expenseToEdit
         title: "Expense updated",
         description: `₹${amount} for ${category} has been updated`,
       });
+      
+      if (onExpenseAdded) {
+        onExpenseAdded(newOrUpdatedExpense);
+      }
     } else {
       // Add new expense
-      const newExpense: Expense = {
-        id: uuidv4(),
-        amount: Number(amount),
-        category,
-        description,
-        date: date.toISOString(),
-      };
-      
-      const updatedExpenses = [...expenses, newExpense];
+      const updatedExpenses = [...expenses, newOrUpdatedExpense];
       setExpenses(updatedExpenses);
       
       toast({
@@ -121,7 +117,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded, expenseToEdit
       });
       
       if (onExpenseAdded) {
-        onExpenseAdded(newExpense);
+        onExpenseAdded(newOrUpdatedExpense);
       }
     }
     

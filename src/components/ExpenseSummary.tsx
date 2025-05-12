@@ -62,9 +62,12 @@ const COLORS = ['#FF7E45', '#4CAF50', '#2196F3', '#FFC107', '#9C27B0', '#FF5722'
 const ExpenseSummary: React.FC = () => {
   const [expenses] = useLocalStorage<Expense[]>('expenses', []);
   
+  // Force fresh calculations every time by adding a timestamp to useMemo deps
+  const forceRefresh = useMemo(() => Date.now(), [expenses]);
+  
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  }, [expenses]);
+  }, [expenses, forceRefresh]);
   
   const today = new Date();
   const todaysExpenses = useMemo(() => {
@@ -72,20 +75,20 @@ const ExpenseSummary: React.FC = () => {
       const expenseDate = new Date(expense.date).toDateString();
       return expenseDate === today.toDateString();
     });
-  }, [expenses, today]);
+  }, [expenses, today, forceRefresh]);
   
   const todayTotal = useMemo(() => {
     return todaysExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-  }, [todaysExpenses]);
+  }, [todaysExpenses, forceRefresh]);
   
   const categoryData = useMemo(() => {
     const grouped = groupByCategory(expenses);
     return Object.values(grouped);
-  }, [expenses]);
+  }, [expenses, forceRefresh]);
   
   const dailyData = useMemo(() => {
     return groupByDay(expenses, 7);
-  }, [expenses]);
+  }, [expenses, forceRefresh]);
   
   return (
     <div className="space-y-6">
@@ -133,7 +136,7 @@ const ExpenseSummary: React.FC = () => {
                         dataKey="value"
                       >
                         {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell key={`cell-${index}-${forceRefresh}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(value) => `₹${value}`} />

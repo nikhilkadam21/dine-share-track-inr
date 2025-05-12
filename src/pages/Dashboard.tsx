@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import Layout from '@/components/Layout';
 import ExpenseForm from '@/components/ExpenseForm';
@@ -20,6 +20,21 @@ const Dashboard: React.FC = () => {
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const { toast } = useToast();
   
+  // Force a refresh of the component state when expenses change
+  const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
+  
+  // This effect refreshes the component when expenses are added or updated
+  useEffect(() => {
+    // Refresh the component state
+    setLastUpdated(Date.now());
+  }, [expenses]);
+  
+  const handleExpenseAdded = (expense: Expense) => {
+    // Force an immediate update to the UI
+    setLastUpdated(Date.now());
+    setExpenseToEdit(null);
+  };
+  
   const handleEditExpense = (expense: Expense) => {
     setExpenseToEdit(expense);
     // Scroll to the form
@@ -35,6 +50,9 @@ const Dashboard: React.FC = () => {
       title: "Expense deleted",
       description: "The expense has been deleted successfully",
     });
+    
+    // Force an immediate update to the UI
+    setLastUpdated(Date.now());
   };
   
   return (
@@ -43,7 +61,7 @@ const Dashboard: React.FC = () => {
         <div className="md:col-span-2 lg:col-span-2">
           <h1 className="text-2xl font-bold tracking-tight mb-4">Dashboard</h1>
           <div className="space-y-6">
-            <ExpenseSummary />
+            <ExpenseSummary key={`summary-${lastUpdated}`} />
             
             <Card>
               <CardHeader>
@@ -173,7 +191,7 @@ const Dashboard: React.FC = () => {
         
         <div className="space-y-6">
           <ExpenseForm 
-            onExpenseAdded={() => setExpenseToEdit(null)} 
+            onExpenseAdded={handleExpenseAdded} 
             expenseToEdit={expenseToEdit}
             onCancelEdit={() => setExpenseToEdit(null)}
           />
