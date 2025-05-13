@@ -1,5 +1,5 @@
 
-import { Issuer as OIDCIssuer, generators as OIDCGenerators } from 'openid-client';
+import { Issuer, Client, generators } from 'openid-client';
 
 // Cognito configuration
 const COGNITO_ISSUER_URL = 'https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_Kkf2CIg52';
@@ -9,23 +9,16 @@ const COGNITO_REDIRECT_URI = 'https://d84l1y8p4kdic.cloudfront.net';
 const COGNITO_LOGOUT_URL = `https://ap-south-1kkf2cig52.auth.ap-south-1.amazoncognito.com/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${COGNITO_REDIRECT_URI}`;
 const COGNITO_LOGIN_URL = `https://ap-south-1kkf2cig52.auth.ap-south-1.amazoncognito.com/login?client_id=${COGNITO_CLIENT_ID}&response_type=code&scope=email+openid+phone&redirect_uri=${encodeURIComponent(COGNITO_REDIRECT_URI)}`;
 
-// TypeScript interface for our client
-interface CognitoClient {
-  callbackParams: (url: string) => any;
-  callback: (redirectUri: string, params: any, checks: any) => Promise<any>;
-  userinfo: (accessToken: string) => Promise<any>;
-}
-
-let cognitoClient: CognitoClient | null = null;
+let cognitoClient: Client | null = null;
 
 // Initialize the OpenID client
-export const initializeCognitoClient = async (): Promise<CognitoClient> => {
+export const initializeCognitoClient = async (): Promise<Client> => {
   if (cognitoClient) {
     return cognitoClient;
   }
 
   try {
-    const issuer = await OIDCIssuer.discover(COGNITO_ISSUER_URL);
+    const issuer = await Issuer.discover(COGNITO_ISSUER_URL);
     cognitoClient = new issuer.Client({
       client_id: COGNITO_CLIENT_ID,
       client_secret: COGNITO_CLIENT_SECRET,
@@ -42,8 +35,8 @@ export const initializeCognitoClient = async (): Promise<CognitoClient> => {
 
 // Generate authentication URL with state and nonce
 export const generateAuthUrl = () => {
-  const nonce = OIDCGenerators.nonce();
-  const state = OIDCGenerators.state();
+  const nonce = generators.nonce();
+  const state = generators.state();
   
   // Store nonce and state in sessionStorage
   sessionStorage.setItem('cognito_nonce', nonce);
