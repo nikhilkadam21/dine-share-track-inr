@@ -1,7 +1,6 @@
 
-// Import the openid-client package correctly
-import { Issuer } from 'openid-client';
-import type { Client, TokenSet, UserinfoResponse } from 'openid-client';
+// Import the entire package and access the required components
+import * as openid from 'openid-client';
 
 // Cognito configuration
 const COGNITO_ISSUER_URL = 'https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_Kkf2CIg52';
@@ -12,16 +11,22 @@ const COGNITO_LOGOUT_URL = `https://ap-south-1kkf2cig52.auth.ap-south-1.amazonco
 const COGNITO_LOGIN_URL = `https://ap-south-1kkf2cig52.auth.ap-south-1.amazoncognito.com/login?client_id=${COGNITO_CLIENT_ID}&response_type=code&scope=email+openid+phone&redirect_uri=${encodeURIComponent(COGNITO_REDIRECT_URI)}`;
 
 // TypeScript interface for our client
-let cognitoClient: Client | null = null;
+interface CognitoClient {
+  callbackParams: (url: string) => any;
+  callback: (redirectUri: string, params: any, checks: any) => Promise<any>;
+  userinfo: (accessToken: string) => Promise<any>;
+}
+
+let cognitoClient: CognitoClient | null = null;
 
 // Initialize the OpenID client
-export const initializeCognitoClient = async (): Promise<Client> => {
+export const initializeCognitoClient = async (): Promise<CognitoClient> => {
   if (cognitoClient) {
     return cognitoClient;
   }
 
   try {
-    const issuer = await Issuer.discover(COGNITO_ISSUER_URL);
+    const issuer = await openid.Issuer.discover(COGNITO_ISSUER_URL);
     cognitoClient = new issuer.Client({
       client_id: COGNITO_CLIENT_ID,
       client_secret: COGNITO_CLIENT_SECRET,
@@ -38,10 +43,8 @@ export const initializeCognitoClient = async (): Promise<Client> => {
 
 // Generate authentication URL with state and nonce
 export const generateAuthUrl = () => {
-  // Import generators only when needed (this avoids the direct import issue)
-  const { generators } = require('openid-client');
-  const nonce = generators.nonce();
-  const state = generators.state();
+  const nonce = openid.generators.nonce();
+  const state = openid.generators.state();
   
   // Store nonce and state in sessionStorage
   sessionStorage.setItem('cognito_nonce', nonce);
