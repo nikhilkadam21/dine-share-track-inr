@@ -1,5 +1,6 @@
 
-import { Issuer as OIDCIssuer, generators as OIDCGenerators } from 'openid-client';
+// Import the entire package and access the required components
+import * as openid from 'openid-client';
 
 // Cognito configuration
 const COGNITO_ISSUER_URL = 'https://cognito-idp.ap-south-1.amazonaws.com/ap-south-1_Kkf2CIg52';
@@ -25,7 +26,7 @@ export const initializeCognitoClient = async (): Promise<CognitoClient> => {
   }
 
   try {
-    const issuer = await OIDCIssuer.discover(COGNITO_ISSUER_URL);
+    const issuer = await openid.Issuer.discover(COGNITO_ISSUER_URL);
     cognitoClient = new issuer.Client({
       client_id: COGNITO_CLIENT_ID,
       client_secret: COGNITO_CLIENT_SECRET,
@@ -42,8 +43,8 @@ export const initializeCognitoClient = async (): Promise<CognitoClient> => {
 
 // Generate authentication URL with state and nonce
 export const generateAuthUrl = () => {
-  const nonce = OIDCGenerators.nonce();
-  const state = OIDCGenerators.state();
+  const nonce = openid.generators.nonce();
+  const state = openid.generators.state();
   
   // Store nonce and state in sessionStorage
   sessionStorage.setItem('cognito_nonce', nonce);
