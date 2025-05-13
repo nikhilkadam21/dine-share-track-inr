@@ -11,7 +11,6 @@ import Reports from "./pages/Reports";
 import Dashboard from "./pages/Dashboard";
 import Groups from "./pages/Groups";
 import Settings from "./pages/Settings";
-import Auth from "./pages/Auth";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -26,9 +25,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth/:action" element={<Auth />} />
-            <Route path="/signin" element={<Auth />} />
-            <Route path="/signup" element={<Auth />} />
             <Route 
               path="/dashboard" 
               element={
