@@ -1,11 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { generateAuthUrl, handleAuthCallback, handleLogout, COGNITO } from '@/integrations/cognito/client';
 
 type UserInfo = {
   sub: string;
   email?: string;
-  phone_number?: string;
   name?: string;
   [key: string]: any;
 };
@@ -24,29 +22,22 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Demo user for testing purposes
+const DEMO_USER: UserInfo = {
+  sub: 'demo-user-123',
+  email: 'demo@example.com',
+  name: 'Demo User',
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for authentication callback
   useEffect(() => {
-    const checkAuthCallback = async () => {
+    // Check for existing user in local storage
+    const checkAuth = () => {
       try {
         setIsLoading(true);
-        
-        // Check if we're returning from auth redirect
-        if (window.location.href.includes('code=') && window.location.href.includes('state=')) {
-          const result = await handleAuthCallback(window.location.href);
-          if (result && result.userInfo) {
-            localStorage.setItem('user', JSON.stringify(result.userInfo));
-            setUser(result.userInfo);
-            
-            // Redirect to dashboard after successful login
-            window.location.href = '/dashboard';
-          }
-        }
-        
-        // Check for existing user in local storage
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           setUser(JSON.parse(storedUser));
@@ -60,15 +51,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
     
-    checkAuthCallback();
+    checkAuth();
   }, []);
 
   const signIn = () => {
-    window.location.href = generateAuthUrl();
+    // For demo purposes, just set the demo user
+    localStorage.setItem('user', JSON.stringify(DEMO_USER));
+    setUser(DEMO_USER);
+    
+    // Redirect to dashboard after successful login
+    if (window.location.pathname === '/') {
+      window.location.href = '/dashboard';
+    }
   };
 
   const signOut = () => {
-    handleLogout();
+    localStorage.removeItem('user');
+    setUser(null);
+    window.location.href = '/';
   };
 
   return (
